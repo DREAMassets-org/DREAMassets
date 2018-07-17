@@ -83,6 +83,12 @@ This will report a list of packets that it has collected.   Each packet is writt
 ```
 which include the timestamp (in seconds since the Epoch) in brackets followed by the packet data.
 
+To get all this in a file you can read later
+
+```bash
+sniffer/tag_scanner.sh > sniffed_packets.txt
+```
+
 Logic to unpack that is in the parser.
 
 ## Parser
