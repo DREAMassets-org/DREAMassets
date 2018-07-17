@@ -7,8 +7,8 @@ Here are some basic steps for setting up a Raspberry Pi from the CanaKit box.
 1. put the SD card in
 1. hook up a monitor, keyboard and mouse
 1. Follow the steps to install Raspberrian
-1. run `rasPi-config` to hook the Pi up to the wireless network
-1. run `rasPi-config` to change the hostname to something that is not `raspberryPi`
+1. run `raspi-config` to hook the Pi up to the wireless network
+1. run `raspi-config` to change the hostname to something that is not `raspberryPi`
 1. update the password for the Pi account
 
 At this point you should be able to disconnect the Pi from everything except power and it should be accessible.
@@ -76,4 +76,3 @@ F2461FBDA1D4,77.28 degF,0.029,0.029,-1.026,194
 
 which is a CSV format with columns "Device ID (UUID), Temperature (degF), x acceleration, y acceleration, z_acceleration, rssi".
 Acceleration is measured in g's.  Rssi units are currently unknown but run from 0 to 255.
-
