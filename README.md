@@ -10,7 +10,7 @@ Here are some basic steps for setting up a Raspberry Pi from the CanaKit box.
 1. Follow the steps to install Raspberrian
   _This is going to take a while, so grab a :coffee: or whatnot_
 
-## Get the RPi ready for remote usage 
+## Get the RPi ready for remote usage
 1. run `raspi-config` to hook the Pi up to the wireless network
 1. run `raspi-config` to change the hostname to something that is not `raspberryPi`
 1. update the password for the Pi account
@@ -18,7 +18,7 @@ Here are some basic steps for setting up a Raspberry Pi from the CanaKit box.
 At this point you should be able to disconnect the Pi from everything except power and it should be accessible.
 Make sure you are on the **same wireless network** as it will only be availble within that subnet.
 
-## Get the RPi ready for Bluetooth Low Energy (BLE) 
+## Get the RPi ready for Bluetooth Low Energy (BLE)
 We need a few extra packages for the Pi to be a BLE sniffer.  Run the following commands to add these dependencies.
 
 ```
@@ -41,6 +41,25 @@ sudo hcidump --raw
 
 At this point you should see a spew of data coming out of the `hcidump` terminal.
 
+## Pulling the github repo to the Raspberry Pi
+
+First you need to setup some ssh keys so that Github will be happy with your connection.  On your Pi
+
+```
+ssh-keygen
+```
+
+It will ask for a filename/directory to save this key.  Leave it as default.
+It will also ask for a passphrase.  I've been using the same as the `pi` user's password.
+
+Once that is setup you can clone the repository like so
+
+```
+git clone https://github.com/DREAMassets/ble_sniffer.git
+```
+
+At this point you'll have a directory called `ble_sniffer` with the contents of the github repo.  Follow
+the instructions below on using the scanner and parser scripts.
 
 ## Scanner
 
@@ -81,4 +100,3 @@ F2461FBDA1D4,77.28 degF,0.029,0.029,-1.026,194
 
 which is a CSV format with columns "Device ID (UUID), Temperature (degF), x acceleration, y acceleration, z_acceleration, rssi".
 Acceleration is measured in g's.  Rssi units are currently unknown but run from 0 to 255.
-
