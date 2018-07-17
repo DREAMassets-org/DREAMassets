@@ -72,7 +72,8 @@ this command returns a spew of data coming out of the `hcidump` terminal:
 > 04 0E 04 01 0C 20 00
 ...
 ```
-Congrats :tada: -- you're sniffing data from the BLE devices near your RPi. 
+Congrats :tada: -- you're sniffing data from the BLE devices near your RPi.   
+Of course, raw data spewing into your terminal isn't especially useful, so now let's create some scripts to gather and parse the data.   
 
 ## Pulling the github repo to the Raspberry Pi
 
