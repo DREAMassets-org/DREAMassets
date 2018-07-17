@@ -4,16 +4,21 @@
 
 Here are some basic steps for setting up a Raspberry Pi from the CanaKit box.
 
+## Initialize the RPi:
 1. put the SD card in
 1. hook up a monitor, keyboard and mouse
 1. Follow the steps to install Raspberrian
+  _This is going to take a while, so grab a :coffee: or whatnot_
+
+## Get the RPi ready for remote usage 
 1. run `raspi-config` to hook the Pi up to the wireless network
 1. run `raspi-config` to change the hostname to something that is not `raspberryPi`
 1. update the password for the Pi account
 
 At this point you should be able to disconnect the Pi from everything except power and it should be accessible.
-Make sure you are on the same wireless network as it will only be availble within that subnet.
+Make sure you are on the **same wireless network** as it will only be availble within that subnet.
 
+## Get the RPi ready for Bluetooth Low Energy (BLE) 
 We need a few extra packages for the Pi to be a BLE sniffer.  Run the following commands to add these dependencies.
 
 ```
@@ -76,3 +81,4 @@ F2461FBDA1D4,77.28 degF,0.029,0.029,-1.026,194
 
 which is a CSV format with columns "Device ID (UUID), Temperature (degF), x acceleration, y acceleration, z_acceleration, rssi".
 Acceleration is measured in g's.  Rssi units are currently unknown but run from 0 to 255.
+
