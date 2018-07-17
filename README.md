@@ -24,27 +24,55 @@ Make sure you are on the **same wireless network** as it will only be availble w
 1. Disconnect your RPi from the monitor, keyboard and mouse and put it in whatever location is most convenient for you.
 
 ## Get the RPi ready for Bluetooth Low Energy (BLE)
-We need a few extra packages for the Pi to be a BLE sniffer.  Run the following commands to add these dependencies.
+We need a few extra packages for the Pi to be a BLE sniffer.  First get dependencies for [Bluez](http://www.bluez.org/):
 
 ```
-sudo apt-get install libdbus-1-dev libdbus-glib-1-dev libglib2.0-dev libical-dev libreadline-dev libudev-dev libusb-dev make glib2.0 libdbus-1-dev libudev-dev bluez bluez-hcidump
+sudo apt-get install libdbus-1-dev libdbus-glib-1-dev libglib2.0-dev libical-dev libreadline-dev libudev-dev libusb-dev make glib2.0 libdbus-1-dev libudev-dev  
+```
+Then get Bluez itself: 
+```
+sudo apt-get install bluez bluez-hcidump
 ```
 
-This should provide `hcitool` and `hcidump` which are the main tools we (probably) will be using.
+Bluez provides the commands `hcitool` and `hcidump` which are the main tools we (probably) will be using to interact with Bluetooth.
 
-To start sniffing, open 2 consoles on the Pi.  In one, start up a scanner
+To start sniffing, open 2 consoles on the Pi.  In the first console, start up a scanner
 
 ```
 sudo hciconfig hc0 up
-sudo hcitool lescan -v
+sudo hcitool lescan 
+```
+those commands return a list of hexadecimal BLE addresses and device names, which by default are `unknown`:
+```
+D5:BB:5C:B3:0C:1C (unknown)
+7C:64:56:36:1F:D9 (unknown)
+7C:64:56:36:1F:D9 [TV] Samsung 6 Series (55)
+4C:0C:F7:63:33:CB (unknown)
+8C:85:90:63:A9:29 (unknown)
+18:B4:30:E3:A5:89 Nest Cam
+DC:56:E7:3C:F6:5F (unknown) 
+...
 ```
 
-In the other, start up the data dumper
+While the first console continues to output BLE addresses, go to the second console and start up the data dumper:
 ```
 sudo hcidump --raw
 ```
-
-At this point you should see a spew of data coming out of the `hcidump` terminal.
+this command returns a spew of data coming out of the `hcidump` terminal:
+```
+> 04 3E 23 02 01 00 01 90 2D A5 6C 18 55 17 02 01 06 13 FF 4C 00 0C 0E 00 5F 36 E2 C9 5C 2D 08 B1 72 A7 09 E3 AD CB
+> 04 3E 0C 02 01 04 01 90 2D A5 6C 18 55 00 CC
+> 04 3E 2B 02 01 00 01 89 A5 E3 30 B4 18 1F 11 07 6C 32 44 5D C8 91 B3 A2 9C 4D 99 9C EF F8 D3 D2 0C FF 18 B4 30 E3 A5 89
+> 04 3E 19 02 01 04 01 89 A5 E3 30 B4 18 0D 02 01 06 09 08 4E 65 73 74 20 43 61 6D A5
+> 04 3E 17 02 01 00 00 29 A9 63 90 85 8C 0B 02 01 06 07 FF 4C 00 10 02 0B 00 9F
+> 04 3E 1A 02 01 00 00 5F F6 3C E7 56 DC 0E 02 01 1A 0A FF 4C 00 10 05 01 10 20 F6 71 9D
+> 04 3E 23 02 01 00 01 01 3B F3 FD E1 4B 17 02 01 06 13 FF 4C 00 0C 0E 00 A0 1D 96 2C F6 98 2C 3B A2 97 3A EB F9 AA
+> 04 3E 0C 02 01 04 01 01 3B F3 FD E1 4B 00 AA
+< 01 0C 20 02 00 01
+> 04 0E 04 01 0C 20 00
+...
+```
+Congrats -- you're sniffing data from the BLE devices near your RPi. 
 
 ## Pulling the github repo to the Raspberry Pi
 
