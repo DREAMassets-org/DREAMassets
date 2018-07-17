@@ -42,7 +42,7 @@ To start sniffing, open 2 consoles on the Pi.  In the first console, start up a 
 sudo hciconfig hc0 up
 sudo hcitool lescan 
 ```
-those commands return a list of hexadecimal BLE addresses and device names, which by default are `unknown`:
+those commands return a list of hexadecimal BLE hardware addresses and device names, which by default are `unknown`:
 ```
 D5:BB:5C:B3:0C:1C (unknown)
 7C:64:56:36:1F:D9 (unknown)
