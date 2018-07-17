@@ -12,11 +12,16 @@ Here are some basic steps for setting up a Raspberry Pi from the CanaKit box.
 
 ## Get the RPi ready for remote usage
 1. run `raspi-config` to hook the Pi up to the wireless network
-1. run `raspi-config` to change the hostname to something that is not `raspberryPi`
+1. run `raspi-config` to change the hostname to something unique that is not `raspberryPi`
 1. update the password for the Pi account
 
 At this point you should be able to disconnect the Pi from everything except power and it should be accessible.
 Make sure you are on the **same wireless network** as it will only be availble within that subnet.
+
+1. SSH into the RPi from your laptop's terminal so you no longer need to use a separate monitor:
+`ssh pi@raspberryPi.local` where `raspberryPi` is replaced by your unique hostname.
+*if this doesn't work, verify that both your laptop and RPi are on the same network.*
+1. Disconnect your RPi from the monitor, keyboard and mouse and put it in whatever location is most convenient for you.
 
 ## Get the RPi ready for Bluetooth Low Energy (BLE)
 We need a few extra packages for the Pi to be a BLE sniffer.  Run the following commands to add these dependencies.
