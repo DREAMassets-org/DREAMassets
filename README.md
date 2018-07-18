@@ -89,10 +89,10 @@ It will also ask for a passphrase.  I've been using the same as the `pi` user's 
 Once that is setup you can clone the repository like so
 
 ```
-git clone https://github.com/DREAMassets/ble_sniffer.git
+git clone https://github.com/DREAMassets/ble_sniffing.git
 ```
 
-At this point you'll have a directory called `ble_sniffer` with the contents of the github repo.  Follow
+At this point you'll have a directory called `ble_sniffing` with the contents of the github repo.  Follow
 the instructions below on using the scanner and parser scripts.
 
 ## Scanner
