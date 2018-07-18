@@ -4,7 +4,7 @@
 # 043E2102010301 1C0CB35CBBD5 15 0201 04 11FF5900 0100 0300 0300 7F03 A503 C4FF A907 C3
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
 # 043E2102010301 71BF99DC8CF7 15 0201 04 11FF5900 0100 0300 0300 F904 8D00 5800 1E08 C4
-
+require 'json'
 require 'io/console'
 
 # module providing twos complement helper functions
@@ -59,8 +59,8 @@ class Packet
       ACCELERATION_FORMAT % x_acceleration,
       ACCELERATION_FORMAT % y_acceleration,
       ACCELERATION_FORMAT % z_acceleration,
-      rssi
-      #timestamp
+      rssi,
+      timestamp
     ].join(",")
   end
 
@@ -98,17 +98,24 @@ end
 
 packets = []
 
-REGEX = /^\[(\d+)\]\s+(.{14})(.{12})15020104(.{8})010003000300(.{4})(.{4})(.{4})(.{4})(.{2})$/
+PACKET_DATA_REGEX = /^(.{14})(.{12})15020104(.{8})010003000300(.{4})(.{4})(.{4})(.{4})(.{2})$/
 while line = gets&.chomp do
-  if (REGEX.match(line))
-    timestamp = $1
-    prefix = $2
-    uuid_maybe = $3
-    temperature = $5
-    x_acc = $6
-    y_acc = $7
-    z_acc = $8
-    rssi = $9
+  begin
+    packet_data = JSON.parse(line)
+  rescue JSON::ParserError => ex
+    puts "ERROR #{ex}"
+    # ignore line if we can't parse it
+  end
+
+  if (packet_data && (PACKET_DATA_REGEX.match(packet_data["packet_data"])))
+    timestamp = packet_data["timestamp"]
+    prefix = $1
+    uuid_maybe = $2
+    temperature = $4
+    x_acc = $5
+    y_acc = $6
+    z_acc = $7
+    rssi = $8
     packet = Packet.new(timestamp, prefix,  uuid_maybe,  temperature,  x_acc, y_acc,  z_acc, rssi)
     $stdout.puts packet.csv_row
     $stdout.ioflush
