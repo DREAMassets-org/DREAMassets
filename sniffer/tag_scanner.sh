@@ -68,14 +68,19 @@ read_blescan_packet_dump() {
   # read a line and look for the starting character ">" or with timestamp like "2018-07-18 10:56:08.151507 >"
   while read line; do
     # packets start with ">" ### Mike got lost here. Are we actually looking for the beginning of the *next* packet??
-    if [[ $line =~ $WITHOUT_TIMESTAMP_REGEX ]] || [[ $line =~ $WITH_TIMESTAMP_REGEX  ]]; then
+    if [[ $line =~ $WITH_TIMESTAMP_REGEX ]] || [[ $line =~ $WITHOUT_TIMESTAMP_REGEX  ]]; then
+      # extract the regex matches immediately
+      tmp_timestamp=${BASH_REMATCH[1]}
+      tmp_packet=${BASH_REMATCH[2]}
+
       # process the completed packet (unless this is the first time through)  ### Is this unique to the first run or any new packet?
       if [ "$packet" ]; then
         process_complete_packet "$packet" "$timestamp"
       fi
+
       # start the new packet
-      timestamp=${BASH_REMATCH[1]}
-      packet=${BASH_REMATCH[2]}
+      timestamp=$tmp_timestamp
+      packet=$tmp_packet
     else
       # continue building the packet
       packet="$packet $line"
