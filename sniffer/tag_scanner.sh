@@ -35,6 +35,12 @@ process_complete_packet() {
   local packet=${1//[\ |>]/}
   local timestamp=${2}
 
+  # We're looking for Fujitsu packets which we know have payloads containing 010003000300
+  # If the BLE packet doesn't containt 010003000300 then skip the output of this packet
+  if [[ ! $packet =~ 010003000300 ]]; then
+    return
+  fi
+
   # If we reached this spot in the script, then we're dealing with a Fujitsu packet
   # output as JSON for easy consumption
   echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
