@@ -17,7 +17,7 @@ halt_hcitool_lescan() {
   sudo pkill --signal SIGINT hcitool
 }
 
-# ?? What does this do? This command means that the script stops when we hit Ctrl-c
+# This command means that the script stops when we hit Ctrl-c
 trap halt_hcitool_lescan INT
 
 # This function(?) processes the incoming data packet  
@@ -28,14 +28,9 @@ process_complete_packet() {
   # => 2F234454-CF6D-4A0F-ADF2-F4911BA9FFA6    1       73       -59     -78
   # where UUID: 2F234454-CF6D-4A0F-ADF2-F4911BA9FFA6 MAJOR: 1 MINOR: 73 POWER: -59 RSSI: -78
 
-  # ?? What does this do? 
+  # This takes the output packet data and strips the '>' off the front and assigns that to a local variable called $packet
   local packet=${1//[\ |>]/}
 
-  # We're looking for Fujitsu packets which we know have payloads containing 010003000300
-  # If the BLE packet doesn't containt 010003000300 then exit the Bash script 
-  if [[ ! $packet =~ 010003000300 ]]; then
-    return
-  fi
   # If we reached this spot in the script, then we're dealing with a Fujitsu packet 
   # output [epoch time] when the data arrived and the payload 
   echo "[`date +"%s"`] $packet"

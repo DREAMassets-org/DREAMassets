@@ -27,9 +27,16 @@ Make sure you are on the **same wireless network** as it will only be availble w
 We need a few extra packages for the Pi to be a BLE sniffer.  First get dependencies for [Bluez](http://www.bluez.org/):
 
 ```
-sudo apt-get install libdbus-1-dev libdbus-glib-1-dev libglib2.0-dev libical-dev libreadline-dev libudev-dev libusb-dev make glib2.0 libdbus-1-dev libudev-dev  
+# Get the machine the latest list of software and the latest software
+sudo apt-get update
+sudo apt-get upgrade -y
+
+# Get required libraries for the bluetooth stuff
+sudo apt-get install libdbus-1-dev libdbus-glib-1-dev libglib2.0-dev libical-dev libreadline-dev libudev-dev libusb-dev make glib2.0 libdbus-1-dev libudev-dev
 ```
-Then get Bluez itself: 
+
+Then get Bluez itself:
+
 ```
 sudo apt-get install bluez bluez-hcidump
 ```
@@ -40,7 +47,7 @@ To start sniffing, open 2 consoles on the Pi.  In the first console, start up a 
 
 ```
 sudo hciconfig hc0 up
-sudo hcitool lescan 
+sudo hcitool lescan
 ```
 those commands return a list of hexadecimal BLE hardware addresses and device names, which by default are `unknown`:
 ```
@@ -50,7 +57,7 @@ D5:BB:5C:B3:0C:1C (unknown)
 4C:0C:F7:63:33:CB (unknown)
 8C:85:90:63:A9:29 (unknown)
 18:B4:30:E3:A5:89 Nest Cam
-DC:56:E7:3C:F6:5F (unknown) 
+DC:56:E7:3C:F6:5F (unknown)
 ...
 ```
 
@@ -72,8 +79,8 @@ this command returns a spew of data coming out of the `hcidump` terminal:
 > 04 0E 04 01 0C 20 00
 ...
 ```
-Congrats :tada: -- you're sniffing data from the BLE devices near your RPi.   
-Of course, raw data spewing into your terminal isn't especially useful, so now let's create some scripts to gather and parse the data.   
+Congrats :tada: -- you're sniffing data from the BLE devices near your RPi.
+Of course, raw data spewing into your terminal isn't especially useful, so now let's create some scripts to gather and parse the data.
 
 ## Pulling the github repo to the Raspberry Pi
 
@@ -140,3 +147,12 @@ F2461FBDA1D4,77.28 degF,0.029,0.029,-1.026,194
 
 which is a CSV format with columns "Device ID (UUID), Temperature (degF), x acceleration, y acceleration, z_acceleration, rssi".
 Acceleration is measured in g's.  Rssi units are currently unknown but run from 0 to 255.
+
+
+## Putting it all together
+
+You can get straight to scanning and parsing with this command
+
+```
+sniffer/tag_scanner.sh | parser/packet_parser.rb
+```

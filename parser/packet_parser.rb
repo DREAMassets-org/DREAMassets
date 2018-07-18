@@ -5,6 +5,9 @@
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
 # 043E2102010301 71BF99DC8CF7 15 0201 04 11FF5900 0100 0300 0300 F904 8D00 5800 1E08 C4
 
+require 'io/console'
+
+# module providing twos complement helper functions
 module TwosComplement
   def convert_to_signed_binary(binary)
     binary_int = binary.to_i(2)
@@ -20,6 +23,7 @@ module TwosComplement
   end
 end
 
+# Class that stores packet information in an easily accessible structure
 class Packet
 
   include TwosComplement
@@ -29,6 +33,9 @@ class Packet
   attr_reader :timestamp, :prefix, :uuid, :hex_temperature, :hex_x_acc, :hex_y_acc, :hex_z_acc, :rssi
 
   def initialize(timestamp, prefix, uuid, hex_temperature, hex_x_acc, hex_y_acc, hex_z_acc, hex_rssi)
+
+    # we store both the original hed values (after byte flipping) and calculates the actual values of
+    # acceleration and tempeature based on Fujitsu's provided math
     @timestamp = timestamp
     @prefix = prefix
     @uuid = uuid
@@ -57,6 +64,8 @@ class Packet
     ].join(",")
   end
 
+  private
+
   def flip_bytes(bytes)
     bytes[2..3] + bytes[0..1]
   end
@@ -64,7 +73,6 @@ class Packet
   def temperature
     @temperature ||= (((unpack_value(hex_temperature) / 333.87) + 21.0) * 9.0 / 5.0) + 32
   end
-
 
   def x_acceleration
     @x_acc ||= acceleration(hex_x_acc)
@@ -101,10 +109,8 @@ while line = gets&.chomp do
     y_acc = $7
     z_acc = $8
     rssi = $9
-    packets << Packet.new(timestamp, prefix,  uuid_maybe,  temperature,  x_acc, y_acc,  z_acc, rssi)
+    packet = Packet.new(timestamp, prefix,  uuid_maybe,  temperature,  x_acc, y_acc,  z_acc, rssi)
+    $stdout.puts packet.csv_row
+    $stdout.ioflush
   end
-end
-
-packets.each do |packet|
-  puts packet.csv_row
 end
