@@ -110,7 +110,7 @@ This will report a list of packets that it has collected.   Each packet is writt
 ```
 [1531866884] 043E2102010301DFCE793166C41502010411FF5900010003000300640486FF6E0025F8C2
 ```
-which include the timestamp (in seconds since the Epoch) in brackets followed by the packet data.
+which include the timestamp (in seconds since the [Epoch](https://www.epochconverter.com/)) in brackets followed by the packet data.
 
 To get all this in a file you can read later
 
