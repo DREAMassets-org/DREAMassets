@@ -17,7 +17,7 @@ halt_hcitool_lescan() {
   sudo pkill --signal SIGINT hcitool
 }
 
-# ?? What does this do? 
+# ?? What does this do? This command means that the script stops when we hit Ctrl-c
 trap halt_hcitool_lescan INT
 
 # This function(?) processes the incoming data packet  
@@ -50,14 +50,17 @@ process_complete_packet() {
  # echo -e "$uuid\t$major\t$minor\t$power\t$rssi"
 }
 
-#This function reads and assembles the packet: 
+# This function reads and assembles the packet because packets span multiple lines and need to be built up 
+# This function is unclear -- Mike and Jon to discuss 
 read_blescan_packet_dump() {
-  # packets span multiple lines and need to be built up
+
+  # start with an empty string(?) 
   packet=""
+  # read a line and look for the starting character ">" 
   while read line; do
-    # packets start with ">"
+    # packets start with ">" ### Mike got lost here. Are we actually looking for the beginning of the *next* packet?? 
     if [[ $line =~ ^\> ]]; then
-      # process the completed packet (unless this is the first time through)
+      # process the completed packet (unless this is the first time through)  ### Is this unique to the first run or any new packet? 
       if [ "$packet" ]; then
         process_complete_packet "$packet"
       fi
@@ -70,12 +73,18 @@ read_blescan_packet_dump() {
   done
 }
 
-# begin BLE scanning
+# Here's where the functions stop and the actual scanning begins (?) 
+# begin BLE scanning and remove duplicate data packets -- they're not useful for our purposes. 
+# What does the second part of the command do? > /dev/null & ???
 sudo hcitool lescan --duplicates > /dev/null &
+# sleep to pause for 1 second so that hcitool can launch 
 sleep 1
-# make sure the scan started
+# make sure the scan started by finding the process ID of a running program using pidof. If there's no ID, the program hasn't started yet. 
+# pidof is defined here: https://linux.die.net/man/8/pidof
+# It looks like "$()" creates an array, so the if statement is checking whether the array is null (???) 
+# $() is defined here https://stackoverflow.com/questions/5163144/what-are-the-special-dollar-sign-shell-variables 
 if [ "$(pidof hcitool)" ]; then
-  # start the scan packet dump and process the stream
+  # start the scan packet dump and process the stream of payloads to be formatted for easier processing. 
   sudo hcidump --raw | read_blescan_packet_dump
 else
   echo "ERROR: it looks like hcitool lescan isn't starting up correctly" >&2
