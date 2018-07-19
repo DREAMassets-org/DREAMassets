@@ -42,12 +42,14 @@
 #    Since hcidump is in the foreground, ctrl-c will just kill it.
 #    
 
+# **** DECLARE FUNCTIONS ****
+
 # The hcitool will run indfinitely, so this function specifies that we kill it
 # https://www.quora.com/What-is-the-difference-between-the-SIGINT-and-SIGTERM-signals-in-Linux
 # https://www.computerhope.com/unix/utrap.htm
 halt_hcitool_lescan() {
   sudo pkill --signal SIGINT hcitool
-}
+} # end halt_hcitool_lescan
 trap halt_hcitool_lescan INT
 
 # process_complete_packet is our function that removes carrots and whitespace from a data packet 
@@ -70,36 +72,48 @@ process_complete_packet() {
   fi
   # otherwise, output as JSON for easy processing
   echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
-}
+} # end process_complete_packet
 
 # this function removes the carriage returns and gathers all the data from a packet 
 read_blescan_packet_dump() {
   # the packet variable starts as an empty string
   packet=""
 
-  # read in a line that comes from `hcidump --raw - t`
+  # read each line that comes from `hcidump --raw - t`
   while read line; do
      # we're looking for the beginning of a data packet where the line begins:
      # 2018-07-19 00:43:48.053989 > 04 3E 0C byte byte byte...
+     # note that if statement both evaluates the line and uses parens to put the contents of the line into variables 
+     # https://stackoverflow.com/questions/13043344/search-and-replace-in-bash-using-regular-expressions
     if [[ $line =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$ ]]; then
-      # extract the regex matches immediately, as defined by the parens above
       tmp_timestamp=${BASH_REMATCH[1]}
       tmp_packet=${BASH_REMATCH[2]}
+      # note that it's important to extract the regex matches immediately, as defined by the parens above
 
-      # process the completed packet (unless this is the first time through)  ### Is this unique to the first run or any new packet?
+      # at this point in the code, we've just hit the beginning of a packet and stored it in the tmp_ variables
+      # so we're going to process the *previous packet* (remove chars, validate Fujitsu, and output it) 
+      # then we're going to overwrite the previous packet with the tmp_ values 
       if [ "$packet" ]; then
         process_complete_packet "$packet" "$timestamp"
       fi
 
-      # start the new packet
+      # overwrite the previous packet with the start of this new packet
       timestamp=$tmp_timestamp
       packet=$tmp_packet
     else
+      # if we're here, then the line we just read *is not the start* of a new packet
+      # therefore it's part of the current packet so we're going to 
       # continue building the packet
       packet="$packet $line"
-    fi
+    fi 
   done
-}
+} # end read_blescan_packet_dump
+
+# ** end function declarations ** 
+
+# MIKE STOPPED WORKING HERE 6.30PM WED JULY 18TH 
+
+# **** START THE SHELL COMMANDS ****
 
 # Here's where the functions stop and the actual scanning begins (?)
 # begin BLE scanning and remove duplicate data packets -- they're not useful for our purposes.
