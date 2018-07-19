@@ -33,6 +33,10 @@
 #    `read_blescan_packet_dump` is our function that removes the carriage returns and gathers all the data from a packet 
 #    (2) `hcidump --raw` outputs characters that aren't bytes: ">" and " " (carrots and whitespace)
 #    `process_complete_packet` is our function that removes those characters and simplifies the data packet to just bytes. 
+#
+#    `process_complete_packet` then performs two more steps in our code:
+#    (1) the fuction verifies that the data packet is from a Fujitsu 
+#    (2) the function outputs the packet using `echo`
 # 
 # 4. Close with ctrl-c. We're running hcitool in the background (the `&` did this), so we need to to specify to close hcitool. 
 #    Since hcidump is in the foreground, ctrl-c will just kill it.
@@ -47,40 +51,38 @@ halt_hcitool_lescan() {
 trap halt_hcitool_lescan INT
 
 # process_complete_packet is our function that removes carrots and whitespace from a data packet 
+# After cleaning up the data packet, `process_complete_packet` outputs the cleaned packet using `echo`
 process_complete_packet() {
-  # take the first argument, $1, and set it to be the packet variable 
-  # also, in the packet: find any character that is "\ " (escape-character white space) or ">" (a greater than character). 
+  # this fucntion expects two arguments 
+  # $1 the first argument is a data packet and $2 the second argument is a timestamp 
+  local packet=$1
+  local timestamp=$2
+
+  # In the packet: find any character that is "\ " (escape-character white space) or ">" (a greater than character). 
   # Replace those characters with nothing -- because there's nothing in the first two slashes "//" 
-  local packet=${1//[\ |>]/}
-  # take the second argument, $2, and  set it to be the timestamp variable 
-  local timestamp=${2}
+  # https://stackoverflow.com/questions/13043344/search-and-replace-in-bash-using-regular-expressions
+  packet=${packet//[\ |>]/}
 
   # We're looking for Fujitsu packets which we know have payloads containing 010003000300
-  # If the BLE packet doesn't containt 010003000300 then skip the output of this packet
+  # If the BLE packet doesn't containt 010003000300 then `return` and don't output the packet 
   if [[ ! $packet =~ 010003000300 ]]; then
     return
   fi
-
-  # If we reached this spot in the script, then we're dealing with a Fujitsu packet
-  # output as JSON for easy consumption
+  # otherwise, output as JSON for easy processing
   echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
 }
 
-# This function reads and assembles the packet because packets span multiple lines and need to be built up
-# This function is unclear -- Mike and Jon to discuss
-
-WITH_TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
-WITHOUT_TIMESTAMP_REGEX="^()>(.*)$"
-
+# this function removes the carriage returns and gathers all the data from a packet 
 read_blescan_packet_dump() {
-
-  # start with an empty string(?)
+  # the packet variable starts as an empty string
   packet=""
-  # read a line and look for the starting character ">" or with timestamp like "2018-07-18 10:56:08.151507 >"
+
+  # read in a line that comes from `hcidump --raw - t`
   while read line; do
-    # packets start with ">" ### Mike got lost here. Are we actually looking for the beginning of the *next* packet??
-    if [[ $line =~ $WITH_TIMESTAMP_REGEX ]] || [[ $line =~ $WITHOUT_TIMESTAMP_REGEX  ]]; then
-      # extract the regex matches immediately
+     # we're looking for the beginning of a data packet where the line begins:
+     # 2018-07-19 00:43:48.053989 > 04 3E 0C byte byte byte...
+    if [[ $line =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$ ]]; then
+      # extract the regex matches immediately, as defined by the parens above
       tmp_timestamp=${BASH_REMATCH[1]}
       tmp_packet=${BASH_REMATCH[2]}
 
