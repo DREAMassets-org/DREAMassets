@@ -44,7 +44,7 @@
 
 # **** DECLARE FUNCTIONS ****
 
-# The hcitool will run indfinitely, so this function specifies that we kill it
+# The hcitool will run indfinitely in the background, so this function specifies that we kill it when we hit ctrl-c 
 # https://www.quora.com/What-is-the-difference-between-the-SIGINT-and-SIGTERM-signals-in-Linux
 # https://www.computerhope.com/unix/utrap.htm
 halt_hcitool_lescan() {
@@ -52,8 +52,8 @@ halt_hcitool_lescan() {
 } # end halt_hcitool_lescan
 trap halt_hcitool_lescan INT
 
-# process_complete_packet is our function that removes carrots and whitespace from a data packet 
-# After cleaning up the data packet, `process_complete_packet` outputs the cleaned packet using `echo`
+# `process_complete_packet` is our function that removes carrots and whitespace from a data packet 
+# `process_complete_packet` also verifies the packet is one of our beacons (from Fujitsu) and outputs the cleaned packet using `echo`
 process_complete_packet() {
   # this fucntion expects two arguments 
   # $1 the first argument is a data packet and $2 the second argument is a timestamp 
@@ -66,33 +66,39 @@ process_complete_packet() {
   packet=${packet//[\ |>]/}
 
   # We're looking for Fujitsu packets which we know have payloads containing 010003000300
-  # If the BLE packet doesn't containt 010003000300 then `return` and don't output the packet 
+  # If the BLE packet doesn't containt 010003000300 then use `return` to exit the Bash script; don't output the packet 
   if [[ ! $packet =~ 010003000300 ]]; then
     return
   fi
+  
+  # include the hostname of the hub since we'll be streaming data from multiple hubs 
+  host=`hostname`
+  
   # otherwise, output as JSON for easy processing
-  echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
+  echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\", \"hostname\": \"$host\" }"
 } # end process_complete_packet
 
-# this function removes the carriage returns and gathers all the data from a packet 
+# this function gathers all the data from one packet by removing the carriage returns 
+# this function also calls `process_complete_packet` which ultimately outputs the packet 
 read_blescan_packet_dump() {
   # the packet variable starts as an empty string
   packet=""
 
-  # read each line that comes from `hcidump --raw - t`
+  # read each line that comes from `hcidump -t --raw` which is the timestamp and raw hex payload
   while read line; do
      # we're looking for the beginning of a data packet where the line begins:
      # 2018-07-19 00:43:48.053989 > 04 3E 0C byte byte byte...
-     # note that if statement both evaluates the line and uses parens to put the contents of the line into variables 
+     # note that if statement below both (1) evaluates the line and (2) uses parens to put the contents of the line into variables ${BASH_REMATCH[1]} and ${BASH_REMATCH[2]}
      # https://stackoverflow.com/questions/13043344/search-and-replace-in-bash-using-regular-expressions
     if [[ $line =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$ ]]; then
       tmp_timestamp=${BASH_REMATCH[1]}
       tmp_packet=${BASH_REMATCH[2]}
-      # note that it's important to extract the regex matches immediately, as defined by the parens above
+      # note that it's important to extract the regex matches ${BASH_REMATCH[1]} immediately from the if statement -- don't do anything else in between
 
-      # at this point in the code, we've just hit the beginning of a packet and stored it in the tmp_ variables
-      # so we're going to process the *previous packet* (remove chars, validate Fujitsu, and output it) 
-      # then we're going to overwrite the previous packet with the tmp_ values 
+      # at this point in the code, we've just hit the beginning of a *new packet* and stored the data in the variables `tmp_timestamp` and `tmp_packet`
+      # now we're going to process the *previous packet* (remove chars, validate Fujitsu, and output it) 
+      # then we're going to overwrite the previous packet with the new packet in `tmp_timestamp` and `tmp_packet`
+      # the if statement below just validates that the previous packet isn't empty
       if [ "$packet" ]; then
         process_complete_packet "$packet" "$timestamp"
       fi
@@ -111,24 +117,22 @@ read_blescan_packet_dump() {
 
 # ** end function declarations ** 
 
-# MIKE STOPPED WORKING HERE 6.30PM WED JULY 18TH 
-
 # **** START THE SHELL COMMANDS ****
 
-# Here's where the functions stop and the actual scanning begins (?)
-# begin BLE scanning and remove duplicate data packets -- they're not useful for our purposes.
-# What does the second part of the command do? > /dev/null & ???
-# /dev/null -- throw away the data stream
-# & run this in the background 
+# First we're going to start our BLE scanner. It outputs hex addresses, which we throw away since we'll gather full payloads with `hcidump` 
+# --duplicates = throw away duplicates
+# > /dev/null = send to a null file, which throws away the data 
+# & = run the `hcitool` command in the background so that we can run `hcidump` simultaneously 
 sudo hcitool lescan --duplicates > /dev/null &
-# sleep to pause for 2 seconds so that hcitool can launch
+# sleep to pause for 2 seconds to ensure that hcitool launched
 sleep 2
-# make sure the scan started by finding the process ID of a running program using pidof. If there's no ID, the program hasn't started yet.
+# Validate that the scan started by finding the process ID of a running program using pidof. If there's no ID, the program hasn't started yet.
 # pidof is defined here: https://linux.die.net/man/8/pidof
-# It looks like "$()" creates an array, so the if statement is checking whether the array is null (???)
-# $() is defined here https://stackoverflow.com/questions/5163144/what-are-the-special-dollar-sign-shell-variables
 if [ "$(pidof hcitool)" ]; then
-  # start the scan packet dump (with timestamps -t) and process the stream of payloads to be formatted for easier processing.
+  # start the scan packet dump 
+  # -t = include the timestamp when the payload arrived
+  # --raw = output the raw hex data. By default, hcidump outputs data with labels
+  # | read_blescan_packet_dump = call our function to process the stream of payloads  
   sudo hcidump -t --raw | read_blescan_packet_dump
 else
   # echo standard out and standard error. >&2 redirect to output on error. 
@@ -136,3 +140,4 @@ else
   echo "ERROR: it looks like hcitool lescan isn't starting up correctly" >&2
   exit 1
 fi
+# ** end shell commands **
