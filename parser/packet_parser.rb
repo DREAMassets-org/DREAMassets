@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# Mike is starting his review & commenting on his *local* laptop :) 
+
 #  1               2                     3                        4   5    6    7   8
 # 043E2102010301 1C0CB35CBBD5 15 0201 04 11FF5900 0100 0300 0300 7F03 A503 C4FF A907 C3
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
