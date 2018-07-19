@@ -38,7 +38,7 @@ class Packet
     # acceleration and tempeature based on Fujitsu's provided math
     @timestamp = timestamp
     @prefix = prefix
-    @uuid = uuid
+    @uuid = flip_bytes(uuid)
     @hex_temperature = flip_bytes(hex_temperature)
     @hex_x_acc = flip_bytes(hex_x_acc)
     @hex_y_acc = flip_bytes(hex_y_acc)
@@ -66,8 +66,8 @@ class Packet
 
   private
 
-  def flip_bytes(bytes)
-    bytes[2..3] + bytes[0..1]
+  def flip_bytes(hex_bytes)
+    hex_bytes.split("").each_slice(2).map(&:join).reverse.join
   end
 
   def temperature
@@ -110,13 +110,13 @@ while line = gets&.chomp do
   if (packet_data && (PACKET_DATA_REGEX.match(packet_data["packet_data"])))
     timestamp = packet_data["timestamp"]
     prefix = $1
-    uuid_maybe = $2
+    uuid = $2
     temperature = $4
     x_acc = $5
     y_acc = $6
     z_acc = $7
     rssi = $8
-    packet = Packet.new(timestamp, prefix,  uuid_maybe,  temperature,  x_acc, y_acc,  z_acc, rssi)
+    packet = Packet.new(timestamp, prefix,  uuid,  temperature,  x_acc, y_acc,  z_acc, rssi)
     $stdout.puts packet.csv_row
     $stdout.ioflush
   end
