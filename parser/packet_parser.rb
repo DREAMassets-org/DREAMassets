@@ -4,6 +4,7 @@
 # 043E2102010301 1C0CB35CBBD5 15 0201 04 11FF5900 0100 0300 0300 7F03 A503 C4FF A907 C3
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
 # 043E2102010301 71BF99DC8CF7 15 0201 04 11FF5900 0100 0300 0300 F904 8D00 5800 1E08 C4
+
 require 'json'
 require 'io/console'
 
@@ -30,15 +31,15 @@ class Packet
 
   ACCELERATION_FORMAT = "%2.3f"
 
-  attr_reader :timestamp, :prefix, :uuid, :hex_temperature, :hex_x_acc, :hex_y_acc, :hex_z_acc, :rssi
+  attr_reader :timestamp, :prefix, :device_id, :hex_temperature, :hex_x_acc, :hex_y_acc, :hex_z_acc, :rssi
 
-  def initialize(timestamp, prefix, uuid, hex_temperature, hex_x_acc, hex_y_acc, hex_z_acc, hex_rssi)
+  def initialize(timestamp, prefix, device_id, hex_temperature, hex_x_acc, hex_y_acc, hex_z_acc, hex_rssi)
 
     # we store both the original hed values (after byte flipping) and calculates the actual values of
     # acceleration and tempeature based on Fujitsu's provided math
     @timestamp = timestamp
     @prefix = prefix
-    @uuid = flip_bytes(uuid)
+    @device_id = flip_bytes(device_id)
     @hex_temperature = flip_bytes(hex_temperature)
     @hex_x_acc = flip_bytes(hex_x_acc)
     @hex_y_acc = flip_bytes(hex_y_acc)
@@ -54,7 +55,7 @@ class Packet
 
   def csv_row
     [
-      uuid,
+      device_id,
       "%2.2f degF" % temperature,
       ACCELERATION_FORMAT % x_acceleration,
       ACCELERATION_FORMAT % y_acceleration,
@@ -98,7 +99,7 @@ end
 
 packets = []
 
-PACKET_DATA_REGEX = /^(.{14})(.{12})15020104(.{8})010003000300(.{4})(.{4})(.{4})(.{4})(.{2})$/
+PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<device_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
 while line = gets&.chomp do
   begin
     packet_data = JSON.parse(line)
@@ -107,17 +108,16 @@ while line = gets&.chomp do
     # ignore line if we can't parse it
   end
 
-  if (packet_data && (PACKET_DATA_REGEX.match(packet_data["packet_data"])))
+  if (packet_data && (match = PACKET_DATA_REGEX.match(packet_data["packet_data"])))
     timestamp = packet_data["timestamp"]
-    prefix = $1
-    uuid = $2
-    temperature = $4
-    x_acc = $5
-    y_acc = $6
-    z_acc = $7
-    rssi = $8
-    packet = Packet.new(timestamp, prefix,  uuid,  temperature,  x_acc, y_acc,  z_acc, rssi)
+    prefix = match[:temperature]
+    device_id = match[:device_id]
+    temperature = match[:temperature]
+    x_acc = match[:x_acc]
+    y_acc = match[:y_acc]
+    z_acc = match[:z_acc]
+    rssi = match[:rssi]
+    packet = Packet.new(timestamp, prefix,  device_id,  temperature,  x_acc, y_acc,  z_acc, rssi)
     $stdout.puts packet.csv_row
-    $stdout.ioflush
   end
 end
