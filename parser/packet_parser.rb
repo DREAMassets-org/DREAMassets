@@ -1,16 +1,29 @@
 #!/usr/bin/env ruby
+# the line above allows this ruby program to run from the command line
 
-# Mike is starting his review & commenting on his *local* laptop :) 
-
+# The bash script tag_scanner.sh pipes date into this ruby program in the format `timestamp` and data `packet`
+# The data packet is a hexadecimal string without spaces that looks like this:  
 #  1               2                     3                        4   5    6    7   8
 # 043E2102010301 1C0CB35CBBD5 15 0201 04 11FF5900 0100 0300 0300 7F03 A503 C4FF A907 C3
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
 # 043E2102010301 71BF99DC8CF7 15 0201 04 11FF5900 0100 0300 0300 F904 8D00 5800 1E08 C4
+# where:
+# 2 = a unique ID for the Fujitsu tag which is inverted (AB:CD:EF:GH arrives as GH:EF:CD:AB) so we need to un-invert it. 
+# 4 = temperature measurement
+# 5 = x-axis acceleration
+# 6 = y-axis acceleration
+# 7 = z-axis acceleration
+# 8 = RSSI 
+# Note that temp and acceleration are all 2-bytes long (16 bits) in two's compliment format. https://www.cs.cornell.edu/~tomf/notes/cps104/twoscomp.html 
+
+# Requiring packages we rely on 
 require 'json'
 require 'io/console'
 
-# module providing twos complement helper functions
+# this module converts data from a binary twos complement into a signed integer 
+# https://www.cs.cornell.edu/~tomf/notes/cps104/twoscomp.html 
 module TwosComplement
+  # this module expects the binary to be 16-bits long, which is what the Fujitsu provides 
   def convert_to_signed_binary(binary)
     binary_int = binary.to_i(2)
     if binary_int >= 2**15
@@ -20,6 +33,7 @@ module TwosComplement
     end
   end
 
+  # ??? What does this do?  
   def translate_to_binary(num)
     sprintf("%b", num).rjust(32, '0')
   end
