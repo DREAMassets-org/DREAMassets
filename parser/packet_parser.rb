@@ -1,12 +1,18 @@
 #!/usr/bin/env ruby
 
+require 'bundler/inline'
+
+gemfile do
+  gem "dogapi"
+end
+
+require 'json'
+require 'io/console'
+
 #  1               2                     3                        4   5    6    7   8
 # 043E2102010301 1C0CB35CBBD5 15 0201 04 11FF5900 0100 0300 0300 7F03 A503 C4FF A907 C3
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
 # 043E2102010301 71BF99DC8CF7 15 0201 04 11FF5900 0100 0300 0300 F904 8D00 5800 1E08 C4
-
-require 'json'
-require 'io/console'
 
 # module providing twos complement helper functions
 module TwosComplement
@@ -65,16 +71,6 @@ class Packet
     ].join(",")
   end
 
-  private
-
-  def flip_bytes(hex_bytes)
-    hex_bytes.split("").each_slice(2).map(&:join).reverse.join
-  end
-
-  def temperature
-    @temperature ||= (((unpack_value(hex_temperature) / 333.87) + 21.0) * 9.0 / 5.0) + 32
-  end
-
   def x_acceleration
     @x_acc ||= acceleration(hex_x_acc)
   end
@@ -87,6 +83,16 @@ class Packet
     @z_acc ||= acceleration(hex_z_acc)
   end
 
+  def temperature
+    @temperature ||= (((unpack_value(hex_temperature) / 333.87) + 21.0) * 9.0 / 5.0) + 32
+  end
+
+  private
+
+  def flip_bytes(hex_bytes)
+    hex_bytes.split("").each_slice(2).map(&:join).reverse.join
+  end
+
   def acceleration(hex_string)
     unpack_value(hex_string) / 2048.to_f
   end
@@ -97,9 +103,40 @@ class Packet
 
 end
 
+class DataDog
+
+  HOSTNAME = `hostname`
+
+  def initialize(api_key)
+    @api_key = api_key
+  end
+
+  def send_event(packet)
+    time = Time.parse(packet.timestamp)
+    %i( x_acceleration y_acceleration z_acceleration temperature rssi ).each do |metric|
+      client.emit_points("fujistu.#{metric}", [[time, packet.send(metric)]], host: HOSTNAME, device: packet.device_id)
+    end
+  end
+
+  private
+  def client
+    @client ||= Dogapi::Client.new(@api_key)
+  end
+end
+
 packets = []
 
 PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<device_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
+
+DATADOG_API_KEY = ENV["DATADOG_API_KEY"]
+
+datadog_client = nil
+if (DATADOG_API_KEY)
+  datadog_client = DataDog.new(DATADOG_API_KEY)
+else
+  $stderr.puts "*** Not sending data to DataDog because there is no api key.  Please set DATADOG_API_KEY in your environment ***"
+end
+
 while line = gets&.chomp do
   begin
     packet_data = JSON.parse(line)
@@ -119,5 +156,12 @@ while line = gets&.chomp do
     rssi = match[:rssi]
     packet = Packet.new(timestamp, prefix,  device_id,  temperature,  x_acc, y_acc,  z_acc, rssi)
     $stdout.puts packet.csv_row
+
+    begin
+      datadog_client && datadog_client.send_event(packet)
+    rescue Net::OpenTimeout
+      puts "Network Timeout... ignoring for now"
+    end
+
   end
 end

@@ -129,7 +129,15 @@ Logic to unpack that is in the parser.
 
 ## Parser
 
-Using a short ruby script, you can parse the data from the sniffer.  Assuming you've saved the sniffer data in a file called `sniffed_packets.txt`, you'd run
+Using a short ruby script, you can parse the data from the sniffer.
+
+
+Since we're using ruby, you'll need to make sure you have `bundler` available to ruby.  This is a one time setup.  On your Pi simply run
+```
+sudo gem install bundler
+```
+
+Assuming you've saved the sniffer data in a file called `sniffed_packets.txt`, you'd run
 
 ```
 cat sniffed_packets.txt | parser/packet_parser.rb
@@ -148,11 +156,22 @@ F2461FBDA1D4,77.28 degF,0.029,0.029,-1.026,194
 which is a CSV format with columns "Device ID (UUID), Temperature (degF), x acceleration, y acceleration, z_acceleration, rssi".
 Acceleration is measured in g's.  Rssi units are currently unknown but run from 0 to 255.
 
+## DataDog as remote storage
 
-## Putting it all together
+We are using DataDog (https://www.datadoghq.com/) as a first cut data storage and visualization tool.  To get the scripts sending data to DataDog, you need
+to do the following.
 
-You can get straight to scanning and parsing with this command
+1.  Signup for DataDog
+1.  Get your API_KEY (this page shows you how to find your API key once your account is setup)
+1.  Run the script on your PI like so
+
+```bash
+sniffer/tag_scanner.sh | DATADOG_API_KEY=<the api key you got from DataDog> parser/packet_parser.rb
 
 ```
+
+If you don't have a DataDog account, you can still run things.  The script will simply not send data to the cloud.  You can do this with
+
+```bash
 sniffer/tag_scanner.sh | parser/packet_parser.rb
 ```
