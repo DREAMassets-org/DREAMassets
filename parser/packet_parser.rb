@@ -37,54 +37,32 @@ class Packet
 
   ACCELERATION_FORMAT = "%2.3f"
 
-  attr_reader :timestamp, :prefix, :device_id, :hex_temperature, :hex_x_acc, :hex_y_acc, :hex_z_acc, :rssi
+  attr_reader :timestamp, :prefix, :device_id, :temperature, :x_acceleration, :y_acceleration, :z_acceleration, :rssi
 
   def initialize(timestamp, prefix, device_id, hex_temperature, hex_x_acc, hex_y_acc, hex_z_acc, hex_rssi)
 
-    # we store both the original hed values (after byte flipping) and calculates the actual values of
-    # acceleration and tempeature based on Fujitsu's provided math
     @timestamp = timestamp
     @prefix = prefix
-    @device_id = flip_bytes(device_id)
-    @hex_temperature = flip_bytes(hex_temperature)
-    @hex_x_acc = flip_bytes(hex_x_acc)
-    @hex_y_acc = flip_bytes(hex_y_acc)
-    @hex_z_acc = flip_bytes(hex_z_acc)
-    @hex_rssi = hex_rssi
-    @rssi = hex_rssi.to_i(16)
 
-    temperature
-    x_acceleration
-    y_acceleration
-    z_acceleration
+    # compute (based on Fujistu's math) the actual values of the data and assign to attributes
+    @device_id = flip_bytes(device_id)
+    @rssi = hex_rssi.to_i(16) - 256
+    @x_acceleration = acceleration( flip_bytes(hex_x_acc) )
+    @y_acceleration = acceleration( flip_bytes(hex_y_acc) )
+    @z_acceleration = acceleration( flip_bytes(hex_z_acc) )
+    @temperature = (((unpack_value( flip_bytes(hex_temperature) ) / 333.87) + 21.0) * 9.0 / 5.0) + 32
   end
 
   def csv_row
     [
       device_id,
-      "%2.2f degF" % temperature,
+      "%2.2f" % temperature,
       ACCELERATION_FORMAT % x_acceleration,
       ACCELERATION_FORMAT % y_acceleration,
       ACCELERATION_FORMAT % z_acceleration,
       rssi,
       timestamp
     ].join(",")
-  end
-
-  def x_acceleration
-    @x_acc ||= acceleration(hex_x_acc)
-  end
-
-  def y_acceleration
-    @y_acc ||= acceleration(hex_y_acc)
-  end
-
-  def z_acceleration
-    @z_acc ||= acceleration(hex_z_acc)
-  end
-
-  def temperature
-    @temperature ||= (((unpack_value(hex_temperature) / 333.87) + 21.0) * 9.0 / 5.0) + 32
   end
 
   private
@@ -123,6 +101,9 @@ class DataDog
     @client ||= Dogapi::Client.new(@api_key)
   end
 end
+
+
+### the main script
 
 packets = []
 
