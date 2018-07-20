@@ -22,6 +22,7 @@ require 'bundler/inline'
 
 # go on the internet and get the DataDog api gem
 gemfile do
+  source "https://rubygems.org"
   gem "dogapi"
 end
 
