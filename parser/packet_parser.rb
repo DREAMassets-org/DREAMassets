@@ -140,7 +140,6 @@ class DataDog
 
   # this send_event() is specific to DataDog. If we use a difference cloud, we'd build a new class and change/customize send_event()
   def send_event(packet)
-<<<<<<< HEAD
     time = Time.parse(packet.timestamp)
 
     # DataDog can only receive data in this format: key : value, where value is (time, metric)
