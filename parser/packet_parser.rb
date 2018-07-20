@@ -14,9 +14,9 @@
 # 6 = y-axis acceleration
 # 7 = z-axis acceleration
 # 8 = RSSI 
-# Note that temp and acceleration are all 2-bytes long (16 bits) in two's compliment format. https://www.cs.cornell.edu/~tomf/notes/cps104/twoscomp.html 
+# Note that temp and acceleration are inverted and 2-bytes long (16 bits) in two's compliment format. https://www.cs.cornell.edu/~tomf/notes/cps104/twoscomp.html 
 
-# Requiring packages we rely on 
+# Requiring libraries we rely on 
 require 'json'
 require 'io/console'
 
