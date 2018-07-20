@@ -162,31 +162,33 @@ class DataDog
   end
 end
 
-# Mike and Jon stopped here at 12noon. 
-
 ### *** THE MAIN SCRIPT ***  
 
-# packets is an empty array (??)
+# packets is an empty array  
 packets = []
 
 # The raw Fujitsu data will arrive in this regular expression (REGEX) 
-# We define the names and number of characters for each part of the REGEX 
+# We define the <names> and {number of characters} for each part of the REGEX 
 PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<device_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
 
-# let's walk through this 
+# Get the DataDog key from my Unix environment (env)  
 DATADOG_API_KEY = ENV["DATADOG_API_KEY"]
 
+# This code allows the hub to run without sending data to DataDog. Without this if(), the code would break and we wouldn't know why. 
 datadog_client = nil
 if (DATADOG_API_KEY)
   datadog_client = DataDog.new(DATADOG_API_KEY)
 else
+  # If there's an error wit the API key, echo say so on the console 
   $stderr.puts "*** Not sending data to DataDog because there is no api key.  Please set DATADOG_API_KEY in your environment ***"
 end
 
-# let's walk through this 
+# get all the text up to a carriage return. Store that text in `line` and throw out the return. 
 while line = gets&.chomp do
   begin
+    # we're expecting the line of data to arrive in a JSON format, so we tell Ruby to parse it as a JSON 
     packet_data = JSON.parse(line)
+  # if there's a problem with the line (e.g., it's not JSON, whatever), just let us know there's a problem and continue on to the next line. Don't blow up :)  
   rescue JSON::ParserError => ex
     puts "ERROR #{ex}"
     # ignore line if we can't parse it
@@ -194,6 +196,7 @@ while line = gets&.chomp do
 
   # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets 
   if (packet_data && (match = PACKET_DATA_REGEX.match(packet_data["packet_data"])))
+    # load the packet variables with data 
     timestamp = packet_data["timestamp"]
     prefix = match[:temperature]
     device_id = match[:device_id]
@@ -202,12 +205,17 @@ while line = gets&.chomp do
     y_acc = match[:y_acc]
     z_acc = match[:z_acc]
     rssi = match[:rssi]
+    # put all the data in a new packet 
     packet = Packet.new(timestamp, prefix,  device_id,  temperature,  x_acc, y_acc,  z_acc, rssi)
-    $stdout.puts packet.csv_row
+    # echo the new packet to the console in CSV format -- this is purely informational 
+    $stdout.puts packet.csv_row 
 
+    # send the new packet to DataDog -- this is where the data goes from the Hub to the Cloud 
     begin
+      # if `datadog_client` isn't null then run the send_event() method on datadog_client, which is tied to our API key, 
       datadog_client && datadog_client.send_event(packet)
     rescue Net::OpenTimeout
+      # we've had a problem where the server takes a while, so if that happens, just ignore the timeout 
       puts "Network Timeout... ignoring for now"
     end
 
