@@ -7,6 +7,7 @@
 # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
 # 043E2102010301 71BF99DC8CF7 15 0201 04 11FF5900 0100 0300 0300 F904 8D00 5800 1E08 C4
 # where:
+# 1 = prefix. we don't really know what this does, but we're not throwing it out yet 
 # 2 = a unique ID for the Fujitsu tag which is inverted (AB:CD:EF:GH arrives as GH:EF:CD:AB) so we need to un-invert it. 
 # 4 = temperature measurement
 # 5 = x-axis acceleration
@@ -16,15 +17,15 @@
 # Note that temp and acceleration are inverted and 2-bytes long (16 bits) in two's compliment format. https://www.cs.cornell.edu/~tomf/notes/cps104/twoscomp.html 
 
 
-# Require libraries
+# Use the bundler library to get external libraries from the internet 
 require 'bundler/inline'
 
-# get the DataDog api gem 
+# go on the internet and get the DataDog api gem 
 gemfile do
   gem "dogapi"
 end
 
-# Require libraries
+# Require other ruby system libraries
 require 'json'
 require 'io/console'
 
@@ -58,10 +59,13 @@ class Packet
 
   # Our `Packet` class has attributes timestamp, prefix, etc.
   # the method attr_reader allows us to access the attributes from outside the Packet class 
-    attr_reader :timestamp, :prefix, :device_id, :temperature, :x_acceleration, :y_acceleration, :z_acceleration, :rssi
+  attr_reader :timestamp, :prefix, :device_id, :temperature, :x_acceleration, :y_acceleration, :z_acceleration, :rssi
 
   # Packet expects to receive a data packet in hex format, which we conver to meaningful decimal values, according to Fujitsu's formulas
   def initialize(timestamp, prefix, device_id, hex_temperature, hex_x_acc, hex_y_acc, hex_z_acc, hex_rssi)
+
+    # note to selves: for now, we're processing the fujitsu bytes into meaninful values
+    # in the future, when we get a cloud server, it prolly'll make sense to do that processing in the cloud 
 
     @timestamp = timestamp
     @prefix = prefix
@@ -80,7 +84,7 @@ class Packet
 
   end
 
-  # why CSV format? 
+  # When we visualize the data in the RPi terminal, we use CSV format  
   def csv_row
     [
       device_id,
@@ -93,6 +97,7 @@ class Packet
     ].join(",")
   end
 
+  # methods below are not accessible outside the Packet class; they're private
   private
 
   def flip_bytes(hex_bytes)
@@ -129,21 +134,35 @@ class DataDog
     @api_key = api_key
   end
 
-  # let's walk through this 
+  # this send_event() is specific to DataDog. If we use a difference cloud, we'd build a new class and change/customize send_event()
   def send_event(packet)
+    # set `time` to the time-formatted time object from the packet instance, since that's what DataDog needs 
+    # take the packet instance and give me the timestamp attribute inside 
+    # Time is a ruby class that has a `parse` method which converts a string to a time-formatted object 
     time = Time.parse(packet.timestamp)
+
+    # DataDog can only receive data in this format: key : value, where value is (time, metric)
+    # metric = temp, x_accel, etc. We send data to DataDog for each metric 
+    # key = "fujistu.#{metric}"
+    # value = time, value of the metric 
+    # metadata is used for filtering. For our project, metadata is host and device
+    # Examples of what we send:
+    # { "fujitsu.temperature" : 1532112674, 72.0, host: `reve`, device: AB:CD:EF:GH}
+    # { "fujitsu.x_acceleration" : 1532112674, 0.034, host: `reve`, device: AB:CD:EF:GH}
+    # { "fujitsu.z_acceleration" : 1532112674, -1.012, host: `reve`, device: AB:CD:EF:GH}
     %i( x_acceleration y_acceleration z_acceleration temperature rssi ).each do |metric|
       client.emit_points("fujistu.#{metric}", [[time, packet.send(metric)]], host: HOSTNAME, device: packet.device_id)
     end
   end
 
-  # let's walk through this 
+  # client is the destination where we send our data. Client is a wrapper for a URL where we send our data 
   private
   def client
     @client ||= Dogapi::Client.new(@api_key)
   end
 end
 
+# Mike and Jon stopped here at 12noon. 
 
 ### *** THE MAIN SCRIPT ***  
 
