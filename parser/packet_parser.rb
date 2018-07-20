@@ -133,9 +133,33 @@ class DataDog
 
   HOSTNAME = `hostname`
 
+  DATA_BUNDLE_SIZE = 100
+
   # We need to give DataDog our API key so they know it's us sending data
   def initialize(api_key)
     @api_key = api_key
+    @events = []
+  end
+
+  def add_event(packet)
+    @events << packet
+    if @events.length >= DATA_BUNDLE_SIZE
+      send_and_reset_events
+    end
+  end
+
+  def send_and_reset_events
+    %i( x_acceleration y_acceleration z_acceleration temperature rssi ).each do |metric|
+      data_by_device_id = @events.each_with_object({}) do |event, obj|
+        obj[event.device_id] ||= []
+        obj[event.device_id] << [ event.timestamp, event.send(metric) ]
+      end
+      data_by_device_id.each do |device_id, datapoints|
+        client.emit_points("fujitsu.#{metric}", datapoints, host: HOSTNAME, device: device_id)
+        #puts "sent to datadog #{device_id} : #{datapoints}"
+      end
+    end
+    @events = []
   end
 
   # this send_event() is specific to DataDog. If we use a difference cloud, we'd build a new class and change/customize send_event()
@@ -212,7 +236,7 @@ while line = gets&.chomp do
     # send the new packet to DataDog -- this is where the data goes from the Hub to the Cloud
     begin
       # if `datadog_client` isn't null then run the send_event() method on datadog_client, which is tied to our API key,
-      datadog_client && datadog_client.send_event(packet)
+      datadog_client && datadog_client.add_event(packet)
     rescue Net::OpenTimeout
       # we've had a problem where the server takes a while, so if that happens, just ignore the timeout
       puts "Network Timeout... ignoring for now"
