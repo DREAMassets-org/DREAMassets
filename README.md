@@ -13,6 +13,7 @@ Here are some basic steps for setting up a Raspberry Pi from the CanaKit box.
 ## Get the RPi ready for remote usage
 1. run `raspi-config` to hook the Pi up to the wireless network
 1. run `raspi-config` to change the hostname to something unique that is not `raspberryPi`
+1. run `raspi-config` to set the timezone and WiFi country for the machine (under Localisation Options)
 1. update the password for the Pi account
 
 At this point you should be able to disconnect the Pi from everything except power and it should be accessible.
@@ -30,15 +31,17 @@ We need a few extra packages for the Pi to be a BLE sniffer.  First get dependen
 # Get the machine the latest list of software and the latest software
 sudo apt-get update
 sudo apt-get upgrade -y
-
-# Get required libraries for the bluetooth stuff
-sudo apt-get install libdbus-1-dev libdbus-glib-1-dev libglib2.0-dev libical-dev libreadline-dev libudev-dev libusb-dev make glib2.0 libdbus-1-dev libudev-dev
 ```
-
+ 
 Then get Bluez itself:
 
 ```
-sudo apt-get install bluez bluez-hcidump
+sudo apt-get install bluez bluez-hcidump -y
+```
+
+For remote usage we should also probably get `screen`
+```
+sudo apt-get install screen -y
 ```
 
 Bluez provides the commands `hcitool` and `hcidump` which are the main tools we (probably) will be using to interact with Bluetooth.
