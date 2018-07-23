@@ -207,7 +207,8 @@ else
 end
 
 # get all the text up to a carriage return. Store that text in `line` and throw out the return.
-while line = gets&.chomp do
+while line = gets.chomp do
+  next unless line
   begin
     # we're expecting the line of data to arrive in a JSON format, so we tell Ruby to parse it as a JSON
     packet_data = JSON.parse(line)
@@ -237,9 +238,11 @@ while line = gets&.chomp do
     begin
       # if `datadog_client` isn't null then run the send_event() method on datadog_client, which is tied to our API key,
       datadog_client && datadog_client.add_event(packet)
-    rescue Net::OpenTimeout
+    rescue SocketError => socket_exception
+      $stderr.puts "Socket Errror #{socket_exception}... ignoring for now"
+    rescue Net::OpenTimeout => network_timeout_exception
       # we've had a problem where the server takes a while, so if that happens, just ignore the timeout
-      puts "Network Timeout... ignoring for now"
+      $stderr.puts "Network Timeout #{network_timeout_exception}... ignoring for now"
     end
 
   end
