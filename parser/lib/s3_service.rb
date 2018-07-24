@@ -13,7 +13,7 @@ class S3Service
   # Also include the bucket to write to, the bundle size (how many measurements to collect in each file),
   # and the format.
   # By default we'll go with 100 measurements per bundle and CSV format
-  def initialize(bucket, bundle_size: DATA_BUNDLE_SIZE, format: :csv)
+  def initialize(bucket, directory: nil, bundle_size: DATA_BUNDLE_SIZE, format: :csv)
 
     has_aws_keys = ENV.fetch('AWS_ACCESS_KEY_ID') && ENV.fetch('AWS_SECRET_ACCESS_KEY') && ENV.fetch('AWS_REGION')
     if !has_aws_keys
@@ -22,6 +22,7 @@ class S3Service
 
     @bundle_size = bundle_size
     @bucket = bucket
+    @directory = directory
     @format = format
     @measurements = []
   end
@@ -37,7 +38,7 @@ class S3Service
     return unless @measurements.length > 0
 
     filename = sprintf("%s-%f.%s", HOSTNAME.chomp, Time.now.to_f, @format)
-    file = bucket.object(filename)
+    file = bucket.object([ @directory, filename ].compact.join("/"))
     file.put(body: formatted_measurements)
     @measurements = []
   end

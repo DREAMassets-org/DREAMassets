@@ -57,7 +57,7 @@ else
   $stderr.puts "*** Not sending data to DataDog because there is no api key.  Please set DATADOG_API_KEY in your environment ***"
 end
 
-s3_client = S3Service.new("dream-assets-orange")
+s3_client = S3Service.new("dream-assets-orange", directory: "measurements")
 
 # get all the text up to a carriage return. Store that text in `line` and throw out the return.
 while line = gets do
@@ -84,13 +84,13 @@ while line = gets do
 
     # put all the data in a new measurement
     measurement = Measurement.new(
-      hub_id: hub_id, 
-      timestamp: timestamp, 
-      tag_id: tag_id,  
-      hex_temperature: temperature, 
-      hex_x_acc: x_acc, 
-      hex_y_acc: y_acc, 
-      hex_z_acc: z_acc, 
+      hub_id: hub_id,
+      timestamp: timestamp,
+      tag_id: tag_id,
+      hex_temperature: temperature,
+      hex_x_acc: x_acc,
+      hex_y_acc: y_acc,
+      hex_z_acc: z_acc,
       hex_rssi: rssi)
     # echo the new measurement to the console in CSV format -- this is purely informational
     $stdout.puts measurement.csv_row
