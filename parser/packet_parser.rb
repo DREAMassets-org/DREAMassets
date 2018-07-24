@@ -97,8 +97,8 @@ while line = gets do
 
     # send the new measurement to DataDog -- this is where the data goes from the Hub to the Cloud
     begin
-      # if `datadog_client` isn't null then run the send_event() method on datadog_client, which is tied to our API key,
-      datadog_client.add_event(measurement) if datadog_client
+      # if `datadog_client` isn't null then run the send_measurement() method on datadog_client, which is tied to our API key,
+      datadog_client.add_measurement(measurement) if datadog_client
       s3_client.add_measurement(measurement) if s3_client
     rescue SocketError => socket_exception
       $stderr.puts "Socket Errror #{socket_exception}... ignoring for now"
@@ -111,5 +111,5 @@ end
 
 # Finally
 # if we didn't get a full bundle, send what we have
-datadog_client.send_and_reset_events if datadog_client
+datadog_client.send_and_reset_bundle if datadog_client
 s3_client.send_and_reset_bundle if s3_client
