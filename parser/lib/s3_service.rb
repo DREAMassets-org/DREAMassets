@@ -29,7 +29,7 @@ class S3Service
   def add_measurement(measurement)
     @measurements << measurement
     if @measurements.length >= @bundle_size
-      send_and_reset_measurements
+      send_and_reset_bundle
     end
   end
 
@@ -56,7 +56,7 @@ class S3Service
 
   def measurements_as_csv
     @measurements.map { |measurement| measurement.csv_row }.join("\n")
-  end 
+  end
 
   def bucket
     s3 ||= Aws::S3::Resource.new.bucket(@bucket)
