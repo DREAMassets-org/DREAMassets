@@ -101,7 +101,7 @@ while line = gets do
       datadog_client.add_measurement(measurement) if datadog_client
       s3_client.add_measurement(measurement) if s3_client
     rescue SocketError => socket_exception
-      $stderr.puts "Socket Errror #{socket_exception}... ignoring for now"
+      $stderr.puts "Socket Error #{socket_exception}... ignoring for now"
     rescue Net::OpenTimeout => network_timeout_exception
       # we've had a problem where the server takes a while, so if that happens, just ignore the timeout
       $stderr.puts "Network Timeout #{network_timeout_exception}... ignoring for now"
