@@ -23,43 +23,49 @@ require 'bundler/inline'
 # go on the internet and get the DataDog api gem
 gemfile(true) do
   source "https://rubygems.org"
-  gem "dogapi"
   gem "aws-sdk-s3", '~> 1'
 end
 
 # Require other ruby system libraries
 require 'json'
 require 'io/console'
+require 'logger'
 
 # require local ruby helpers and classes
 require_relative "./lib/measurement.rb"
-require_relative "./lib/data_dog_service.rb"
 require_relative "./lib/s3_service.rb"
+
+# Setup Logger
+logfile = File.open('logs/packet_parser.log', File::WRONLY | File::APPEND | File::CREAT)
+log = Logger.new(logfile)
+log.level = Logger.const_get(ENV.fetch("LOG_LEVEL", "WARN").upcase)
+log.datetime_format = "%Y-%m-%d %H:%M:%S"
+log.info "Started Parsing Packets"
+
 
 ### *** THE MAIN SCRIPT ***
 
 # set the hub_id to the hostname
-hub_id = `hostname`.chomp
+HUB_ID = `hostname`.chomp
 
 # The raw Fujitsu data will arrive in this regular expression (REGEX)
 # We define the <names> and {number of characters} for each part of the REGEX
 PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
 
-# Get the DataDog key from my Unix environment (env)
-DATADOG_API_KEY = ENV["DATADOG_API_KEY"]
+# grab variables from the environemnt
+BUNDLE_SIZE = ENV.fetch("BUNDLE_SIZE", 100).to_i
+S3_BUCKET = ENV.fetch("S3_BUCKET", "dream-assets-orange")
+S3_BUCKET_DIRECTORY = ENV.fetch("S3_BUCKET_DIRECTORY", "measurements")
 
-# This code allows the hub to run without sending data to DataDog. Without this if(), the code would break and we wouldn't know why.
-datadog_client = nil
-if (DATADOG_API_KEY)
-  datadog_client = DataDogService.new(DATADOG_API_KEY)
-else
-  # If there's an error wit the API key, echo say so on the console
-  $stderr.puts "*** Not sending data to DataDog because there is no api key.  Please set DATADOG_API_KEY in your environment ***"
-end
+log.debug("Build S3 Service")
+s3_client = S3Service.new(HUB_ID, S3_BUCKET, directory: S3_BUCKET_DIRECTORY)
 
-s3_client = S3Service.new("dream-assets-orange", directory: "measurements")
+measurement_bundle = []
 
 # get all the text up to a carriage return. Store that text in `line` and throw out the return.
+
+log.debug("Start Processing input data")
+
 while line = gets do
   next unless line
   line.chomp!
@@ -68,7 +74,7 @@ while line = gets do
     packet_data = JSON.parse(line)
   # if there's a problem with the line (e.g., it's not JSON, whatever), just let us know there's a problem and continue on to the next line. Don't blow up :)
   rescue JSON::ParserError => ex
-    puts "ERROR #{ex}"
+    log.error("Failed to parse json #{ex}")
     # ignore line if we can't parse it
   end
 
@@ -84,7 +90,7 @@ while line = gets do
 
     # put all the data in a new measurement
     measurement = Measurement.new(
-      hub_id: hub_id,
+      hub_id: HUB_ID,
       timestamp: timestamp,
       tag_id: tag_id,
       hex_temperature: temperature,
@@ -95,21 +101,26 @@ while line = gets do
     # echo the new measurement to the console in CSV format -- this is purely informational
     $stdout.puts measurement.csv_row
 
-    # send the new measurement to DataDog -- this is where the data goes from the Hub to the Cloud
-    begin
-      # if `datadog_client` isn't null then run the send_measurement() method on datadog_client, which is tied to our API key,
-      datadog_client.add_measurement(measurement) if datadog_client
-      s3_client.add_measurement(measurement) if s3_client
-    rescue SocketError => socket_exception
-      $stderr.puts "Socket Error #{socket_exception}... ignoring for now"
-    rescue Net::OpenTimeout => network_timeout_exception
-      # we've had a problem where the server takes a while, so if that happens, just ignore the timeout
-      $stderr.puts "Network Timeout #{network_timeout_exception}... ignoring for now"
+    measurement_bundle << measurement
+
+    # if the bundle is big enough, push the data to the cloud and start a new bundle
+    if measurement_bundle.length >= BUNDLE_SIZE
+      log.info "Got a full bundle (#{BUNDLE_SIZE} measurements)"
+      begin
+        s3_client.send(measurement_bundle) if s3_client
+      rescue SocketError => socket_exception
+        log.error "Socket Error #{socket_exception}... ignoring for now"
+      rescue Net::OpenTimeout => network_timeout_exception
+        # we've had a problem where the server takes a while, so if that happens, just ignore the timeout
+        log.error "Network Timeout #{network_timeout_exception}... ignoring for now"
+      end
     end
   end
 end
 
-# Finally
-# if we didn't get a full bundle, send what we have
-datadog_client.send_and_reset_bundle if datadog_client
-s3_client.send_and_reset_bundle if s3_client
+log.info "Hit the end of the stream."
+# finally send whatever we might have left if we get to the end of the input data stream
+if measurement_bundle.length > 0
+  log.info "Sending the remaining #{measurement_bundle.length} measurements"
+  s3_client.send(measurement_bundle) if s3_client
+end
