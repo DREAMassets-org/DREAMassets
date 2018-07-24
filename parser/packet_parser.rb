@@ -32,18 +32,18 @@ require 'json'
 require 'io/console'
 
 # require local ruby helpers and classes
-require_relative "./lib/packet.rb"
+require_relative "./lib/measurement.rb"
 require_relative "./lib/data_dog_service.rb"
 require_relative "./lib/s3_service.rb"
 
 ### *** THE MAIN SCRIPT ***
 
-# packets is an empty array
-packets = []
+# set the hub_id to the hostname
+hub_id = `hostname`.chomp
 
 # The raw Fujitsu data will arrive in this regular expression (REGEX)
 # We define the <names> and {number of characters} for each part of the REGEX
-PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<device_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
+PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
 
 # Get the DataDog key from my Unix environment (env)
 DATADOG_API_KEY = ENV["DATADOG_API_KEY"]
@@ -74,25 +74,32 @@ while line = gets do
 
   # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets
   if (packet_data && (match = PACKET_DATA_REGEX.match(packet_data["packet_data"])))
-    # load the packet variables with data
     timestamp = packet_data["timestamp"]
-    prefix = match[:temperature]
-    device_id = match[:device_id]
+    tag_id = match[:tag_id]
     temperature = match[:temperature]
     x_acc = match[:x_acc]
     y_acc = match[:y_acc]
     z_acc = match[:z_acc]
     rssi = match[:rssi]
-    # put all the data in a new packet
-    packet = Packet.new(timestamp, prefix,  device_id,  temperature,  x_acc, y_acc,  z_acc, rssi)
-    # echo the new packet to the console in CSV format -- this is purely informational
-    $stdout.puts packet.csv_row
 
-    # send the new packet to DataDog -- this is where the data goes from the Hub to the Cloud
+    # put all the data in a new measurement
+    measurement = Measurement.new(
+      hub_id: hub_id, 
+      timestamp: timestamp, 
+      tag_id: tag_id,  
+      hex_temperature: temperature, 
+      hex_x_acc: x_acc, 
+      hex_y_acc: y_acc, 
+      hex_z_acc: z_acc, 
+      hex_rssi: rssi)
+    # echo the new measurement to the console in CSV format -- this is purely informational
+    $stdout.puts measurement.csv_row
+
+    # send the new measurement to DataDog -- this is where the data goes from the Hub to the Cloud
     begin
       # if `datadog_client` isn't null then run the send_event() method on datadog_client, which is tied to our API key,
-      datadog_client.add_event(packet) if datadog_client
-      s3_client.add_event(packet) if s3_client
+      datadog_client.add_event(measurement) if datadog_client
+      s3_client.add_measurement(measurement) if s3_client
     rescue SocketError => socket_exception
       $stderr.puts "Socket Errror #{socket_exception}... ignoring for now"
     rescue Net::OpenTimeout => network_timeout_exception
@@ -105,4 +112,4 @@ end
 # Finally
 # if we didn't get a full bundle, send what we have
 datadog_client.send_and_reset_events if datadog_client
-s3_client.send_and_reset_events if s3_client
+s3_client.send_and_reset_bundle if s3_client

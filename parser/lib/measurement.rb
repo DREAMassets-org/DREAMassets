@@ -16,8 +16,8 @@ module TwosComplement
   end
 end
 
-# Class that stores packet information in an easily accessible structure
-class Packet
+# Class that stores Measurement information in an easily accessible structure
+class Measurement
 
   include TwosComplement
 
@@ -25,23 +25,25 @@ class Packet
   # This is our arbitrary decision -- we could have more sigfigs but this works for now.
   ACCELERATION_FORMAT = "%2.3f"
 
-  # Our `Packet` class has attributes timestamp, prefix, etc.
-  # the method attr_reader allows us to access the attributes from outside the Packet class
-  attr_reader :timestamp, :prefix, :device_id, :temperature, :x_acceleration, :y_acceleration, :z_acceleration, :rssi
+  # Our `Measurement` class has attributes timestamp, prefix, etc.
+  # the method attr_reader allows us to access the attributes from outside the Measurement class
+  attr_reader :timestamp, :hub_id, :tag_id, :temperature, :x_acceleration, :y_acceleration, :z_acceleration, :rssi
 
-  # Packet expects to receive a data packet in hex format, which we conver to meaningful decimal values, according to Fujitsu's formulas
-  def initialize(timestamp, prefix, device_id, hex_temperature, hex_x_acc, hex_y_acc, hex_z_acc, hex_rssi)
+  # Measurement expects to receive a data Measurement in hex format, which we conver to meaningful decimal values, according to Fujitsu's formulas
+  def initialize(timestamp:, hub_id:, tag_id:, hex_temperature:, hex_x_acc:, hex_y_acc:, hex_z_acc:, hex_rssi:)
 
     # note to selves: for now, we're processing the fujitsu bytes into meaninful values
     # in the future, when we get a cloud server, it prolly'll make sense to do that processing in the cloud
 
+    # TODO: host
+    @hub_id = hub_id
+
     # set `timestamp` to the time-formatted time object
     # Time is a ruby class that has a `parse` method which converts a string to a time-formatted object
     @timestamp = Time.parse(timestamp)
-    @prefix = prefix
 
     # the device ID is inverted (AB:CD:EF:GH arrives as GH:EF:CD:AB) so we need to un-invert it using flip_bytes().
-    @device_id = flip_bytes(device_id)
+    @tag_id = flip_bytes(tag_id)
     # we're assuming that RSSI for Fujitsu beacons is similar to iBeacons
     @rssi = hex_rssi.to_i(16) - 256
     # take the acceleration value, flip the bytes, and run Fujitsu's formula to get fractions of 1g:
@@ -55,32 +57,35 @@ class Packet
 
   end
 
+  # these are used to generate the csv and when we build a csv_row, the order should be consistent with the headers
+  CSV_HEADERS = %w( hub_id device temperature x_acceleration y_acceleration z_acceleration rssi timestamp ) 
   # When we visualize the data in the RPi terminal, we use CSV format
   def csv_row
     [
-      device_id,
+      hub_id, 
+      tag_id,
       "%2.2f" % temperature,
       ACCELERATION_FORMAT % x_acceleration,
       ACCELERATION_FORMAT % y_acceleration,
       ACCELERATION_FORMAT % z_acceleration,
       rssi,
-      timestamp
+      timestamp.to_i
     ].join(",")
   end
 
   def as_json
     {
-      device_id: device_id,
+      tag_id: tag_id,
       temperature: temperature,
       x_acceleration: x_acceleration,
       y_acceleration: y_acceleration,
       z_acceleration: z_acceleration,
       rssi: rssi,
-      timestamp: timestamp
+      timestamp: timestamp.to_i
     }
   end
 
-  # methods below are not accessible outside the Packet class; they're private
+  # methods below are not accessible outside the Measurement class; they're private
   private
 
   def flip_bytes(hex_bytes)
