@@ -32,7 +32,7 @@ We need a few extra packages for the Pi to be a BLE sniffer.  First get dependen
 sudo apt-get update
 sudo apt-get upgrade -y
 ```
- 
+
 Then get Bluez itself:
 
 ```
@@ -178,3 +178,29 @@ If you don't have a DataDog account, you can still run things.  The script will 
 ```bash
 sniffer/tag_scanner.sh | parser/packet_parser.rb
 ```
+
+
+## Deployment on Raspberry PIs
+
+Typical deployment, once the PI is setup, should go as follows
+
+1. login to the pi
+```
+ssh pi@the_pi_name
+```
+
+1. connect to the remote screen (if it exists)
+```
+screen -r
+```
+
+1. If the PI is collecting data, connecting to the screen should show you some data.  You can use Ctrl+C to kill that process
+1. Update the code ( `git pull` )
+1. restart the collection process
+
+```
+sniffer/tag_scanner.sh | parser/packet_parser.rb | tee <name of an output file for reference>
+```
+
+1. exit from the screen with Ctrl+A Ctrl+D
+1. logout of the PI
