@@ -24,24 +24,29 @@ require 'bundler/inline'
 gemfile(true) do
   source "https://rubygems.org"
   gem "aws-sdk-s3", '~> 1'
+  gem "google-cloud-storage"
+
+  # for debugging
+  gem "pry-byebug"
 end
 
 # Require other ruby system libraries
 require 'json'
 require 'io/console'
-require 'logger'
 
 # require local ruby helpers and classes
 require_relative "./lib/measurement.rb"
 require_relative "./lib/s3_service.rb"
+require_relative "./lib/google_cloud_storage_service.rb"
 
 # Setup Logger
+require 'logger'
+
 logfile = File.open('logs/packet_parser.log', File::WRONLY | File::APPEND | File::CREAT)
 log = Logger.new(logfile)
 log.level = Logger.const_get(ENV.fetch("LOG_LEVEL", "WARN").upcase)
 log.datetime_format = "%Y-%m-%d %H:%M:%S"
 log.info "Started Parsing Packets"
-
 
 ### *** THE MAIN SCRIPT ***
 
@@ -57,14 +62,46 @@ BUNDLE_SIZE = ENV.fetch("BUNDLE_SIZE", 100).to_i
 S3_BUCKET = ENV.fetch("S3_BUCKET", "dream-assets-orange")
 S3_BUCKET_DIRECTORY = ENV.fetch("S3_BUCKET_DIRECTORY", "measurements")
 
+GOOGLE_PROJECT_ID=ENV.fetch("GOOGLE_PROJECT_ID")
+GOOGLE_CREDENTIALS_JSON="./secrets/DreamAssetTester-321cb537c48c.json"
+GOOGLE_BUCKET=S3_BUCKET
+GOOGLE_BUCKET_DIRECTORY=S3_BUCKET_DIRECTORY
+
 log.debug("Build S3 Service")
-s3_client = S3Service.new(HUB_ID, S3_BUCKET, directory: S3_BUCKET_DIRECTORY)
+
+s3_client = S3Service.new(
+  HUB_ID,
+  S3_BUCKET,
+  directory: S3_BUCKET_DIRECTORY
+)
+google_storage_client = GoogleCloudStorageService.new(
+  GOOGLE_PROJECT_ID,
+  GOOGLE_CREDENTIALS_JSON,
+  HUB_ID,
+  GOOGLE_BUCKET,
+  directory: GOOGLE_BUCKET_DIRECTORY
+)
 
 measurement_bundle = []
 
 # get all the text up to a carriage return. Store that text in `line` and throw out the return.
 
 log.debug("Start Processing input data")
+
+# Setup upload clients
+upload_clients = [ s3_client, google_storage_client ]
+
+def upload_to_all_clients(clients, measurement_bundle, logger)
+  begin
+    clients.each do |client|
+      logger.info("Sending to #{client.class.name}")
+      client.upload(measurement_bundle)
+    end
+  rescue Exception => ex
+    logger.error("Something went wrong : #{ex}")
+    raise ex
+  end
+end
 
 while line = gets do
   next unless line
@@ -106,14 +143,8 @@ while line = gets do
     # if the bundle is big enough, push the data to the cloud and start a new bundle
     if measurement_bundle.length >= BUNDLE_SIZE
       log.info "Got a full bundle (#{BUNDLE_SIZE} measurements)"
-      begin
-        s3_client.send(measurement_bundle) if s3_client
-      rescue SocketError => socket_exception
-        log.error "Socket Error #{socket_exception}... ignoring for now"
-      rescue Net::OpenTimeout => network_timeout_exception
-        # we've had a problem where the server takes a while, so if that happens, just ignore the timeout
-        log.error "Network Timeout #{network_timeout_exception}... ignoring for now"
-      end
+      upload_to_all_clients(upload_clients, measurement_bundle, log)
+      measurement_bundle = []
     end
   end
 end
@@ -122,5 +153,6 @@ log.info "Hit the end of the stream."
 # finally send whatever we might have left if we get to the end of the input data stream
 if measurement_bundle.length > 0
   log.info "Sending the remaining #{measurement_bundle.length} measurements"
-  s3_client.send(measurement_bundle) if s3_client
+  upload_to_all_clients(upload_clients, measurement_bundle, log)
 end
+

@@ -1,14 +1,12 @@
-# Ruby wrapper for our connection to S3 which should
-# bundle a group of measurements into a csv (or json) file and send it to a bucket
+# Ruby wrapper for our connection to S3
+# provides one primary method `#send` which takes an array of measurments and sends them to S3 as a csv file
 
 require 'aws-sdk-s3'
 
 class S3Service
 
   # AWS client looks in our environment for keys, so you need to set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_REGION
-  # Also include the bucket to write to, the bundle size (how many measurements to collect in each file),
-  # and the format.
-  # By default we'll go with 100 measurements per bundle and CSV format
+  # We also want the hub_id (hostname of the hub), the bucket and optional directory in which to write the files
   def initialize(hub_id, bucket_name, directory: nil)
 
     has_aws_keys = ENV.fetch('AWS_ACCESS_KEY_ID') && ENV.fetch('AWS_SECRET_ACCESS_KEY') && ENV.fetch('AWS_REGION')
@@ -20,19 +18,24 @@ class S3Service
     @directory = directory
   end
 
-  def send(measurements)
+  # Given an array of Measurement objects, serialize them as CSV and send them to S3 in a file called "<hub id>-<timestamp>.csv"
+  def upload(measurements)
     return unless measurements.length > 0
 
-    filename = sprintf("%s-%f.csv", @hub_id, Time.now.to_f)
-    file = bucket.object([ @directory, filename ].compact.join("/"))
-    file.put(body: formatted_measurements(measurements))
+    file = bucket.object(generate_filename)
+    file.put(body: format_measurements(measurements))
   end
 
 
   # client is the destination where we send our data. Client is a wrapper for a URL where we send our data
   private
 
-  def formatted_measurements(measurements)
+  def generate_filename
+    filename = sprintf("%s-%f.csv", @hub_id, Time.now.to_f)
+    [ @directory, filename ].compact.join("/")
+  end
+
+  def format_measurements(measurements)
     # return the data as a String that is in CSV format
     measurements.map { |measurement| measurement.csv_row }.join("\n")
   end
