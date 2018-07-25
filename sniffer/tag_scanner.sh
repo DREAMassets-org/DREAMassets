@@ -13,7 +13,6 @@
 # 1. Start the BLE scanner using the command: `sudo hcitool lescan --duplicates > /dev/null &`
 #    sudo = use the privelges of a superuser https://en.wikipedia.org/wiki/Sudo
 #    hcitool lescan = start the BLE scanner https://www.systutorials.com/docs/linux/man/1-hcitool/
-#    --duplicates = remove duplicate packets since the redundancy isn't helpful
 #    > /dull/null = redirect the output to a null file; we're throwing away the output. ">" is for files.
 #    & = run this command in the background since we need to run hcitool and hcidump simultaneously
 #
@@ -100,11 +99,10 @@ read_blescan_packet_dump() {
 }
 
 # Here's where the functions stop and the actual scanning begins (?)
-# begin BLE scanning and remove duplicate data packets -- they're not useful for our purposes.
-# What does the second part of the command do? > /dev/null & ???
-# /dev/null -- throw away the data stream
+# begin BLE scanning
+# run output to the trash (/dev/null -- throw away the data stream)
 # & run this in the background
-sudo hcitool lescan --duplicates > /dev/null &
+sudo hcitool lescan > /dev/null &
 # sleep to pause for 2 seconds so that hcitool can launch
 sleep 2
 # make sure the scan started by finding the process ID of a running program using pidof. If there's no ID, the program hasn't started yet.
