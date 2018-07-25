@@ -198,8 +198,8 @@ screen -r
 screen 
 ```
 
-1. If the PI is collecting data, connecting to the screen should show you some data.  You can use Ctrl+C to kill that process
-1. Update the code ( `git pull` )
+1. If the PI is collecting data, connecting to the screen should show you some data.  You can use Ctrl+C to kill that process and exit the screen
+1. Update the code ( `cd ble_sniffing/; git pull` )
 1. restart the collection process
 
 ```

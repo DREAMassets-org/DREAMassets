@@ -84,6 +84,9 @@ measurement_bundle = []
 # get all the text up to a carriage return. Store that text in `line` and throw out the return.
 
 log.debug("Start Processing input data")
+log.debug("Current Settings: BUNDLE_SIZE #{BUNDLE_SIZE}")
+log.debug("Current Settings: BUCKET #{S3_BUCKET}")
+log.debug("Current Settings: DIRECTORY #{S3_DIRECTORY}")
 
 # Setup upload clients
 upload_clients = [ s3_client, google_storage_client ]
@@ -96,6 +99,8 @@ def upload_to_all_clients(clients, measurement_bundle, logger)
     end
   rescue Exception => ex
     logger.error("Something went wrong : #{ex}")
+    puts ex.backtrace
+
     raise ex
   end
 end
