@@ -23,7 +23,6 @@ require 'bundler/inline'
 # go on the internet and get the DataDog api gem
 gemfile(true) do
   source "https://rubygems.org"
-  gem "aws-sdk-s3", '~> 1'
   gem "google-cloud-storage"
 end
 
@@ -33,7 +32,6 @@ require 'io/console'
 
 # require local ruby helpers and classes
 require_relative "./lib/measurement.rb"
-require_relative "./lib/s3_service.rb"
 require_relative "./lib/google_cloud_storage_service.rb"
 
 # Setup Logger
@@ -56,21 +54,14 @@ PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})0
 
 # grab variables from the environemnt
 BUNDLE_SIZE = ENV.fetch("BUNDLE_SIZE", 100).to_i
-S3_BUCKET = ENV.fetch("S3_BUCKET", "dream-assets-orange")
-S3_BUCKET_DIRECTORY = ENV.fetch("S3_BUCKET_DIRECTORY", "measurements")
 
 GOOGLE_PROJECT_ID=ENV.fetch("GOOGLE_PROJECT_ID")
-GOOGLE_CREDENTIALS_JSON="./secrets/DreamAssetTester-321cb537c48c.json"
-GOOGLE_BUCKET=S3_BUCKET
-GOOGLE_BUCKET_DIRECTORY=S3_BUCKET_DIRECTORY
+GOOGLE_CREDENTIALS_JSON=ENV.fetch("GOOGLE_CREDENTIALS_JSON_FILE")
+GOOGLE_BUCKET = ENV.fetch("GOOGLE_BUCKET", "dream-assets-orange")
+GOOGLE_BUCKET_DIRECTORY = ENV.fetch("GOOGLE_BUCKET_DIRECTORY", "measurements")
 
-log.debug("Build S3 Service")
+log.debug("Build Google Service")
 
-s3_client = S3Service.new(
-  HUB_ID,
-  S3_BUCKET,
-  directory: S3_BUCKET_DIRECTORY
-)
 google_storage_client = GoogleCloudStorageService.new(
   GOOGLE_PROJECT_ID,
   GOOGLE_CREDENTIALS_JSON,
@@ -85,11 +76,11 @@ measurement_bundle = []
 
 log.debug("Start Processing input data")
 log.debug("Current Settings: BUNDLE_SIZE #{BUNDLE_SIZE}")
-log.debug("Current Settings: BUCKET #{S3_BUCKET}")
-log.debug("Current Settings: DIRECTORY #{S3_BUCKET_DIRECTORY}")
+log.debug("Current Settings: BUCKET #{GOOGLE_BUCKET}")
+log.debug("Current Settings: DIRECTORY #{GOOGLE_BUCKET_DIRECTORY}")
 
 # Setup upload clients
-upload_clients = [ s3_client, google_storage_client ]
+upload_clients = [ google_storage_client ]
 
 def upload_to_all_clients(clients, measurement_bundle, logger)
   begin
@@ -99,9 +90,7 @@ def upload_to_all_clients(clients, measurement_bundle, logger)
     end
   rescue Exception => ex
     logger.error("Something went wrong : #{ex}")
-    puts ex.backtrace
-
-    raise ex
+    logger.debug(ex.backtrace)
   end
 end
 

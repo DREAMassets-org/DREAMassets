@@ -180,6 +180,20 @@ If you don't have a DataDog account, you can still run things.  The script will 
 sniffer/tag_scanner.sh | parser/packet_parser.rb
 ```
 
+## Required environment variables on the Hub
+
+Because we're hooking up to google, we need to setup the following variables in our environment 
+which will allow us to authenticate properly and use the google services through our scripts
+
+```
+GOOGLE_PROJECT_ID=<your google project id>
+GOOGLE_BUCKET=dream-assets-orange  (or a custom bucket name)
+GOOGLE_DIRECTORY=measurements
+GOOGLE_CREDENTIALS_JSON_FILE="./secrets/your google credentials.json"
+```
+
+These are often bundled in a `env.sh` file which we can store on the hub (not in Github since it has sensitive information).
+Before running the scripts, we can `source env.sh` to set all those variables in our running bash environment.
 
 ## Deployment on Raspberry PIs
 
@@ -203,8 +217,13 @@ screen
 1. restart the collection process
 
 ```
-sniffer/tag_scanner.sh | parser/packet_parser.rb | tee <name of an output file for reference>
+source env.sh && sniffer/tag_scanner.sh | parser/packet_parser.rb 
 ```
 
 1. exit from the screen with Ctrl+A Ctrl+D
 1. logout of the PI
+
+Notes:
+* Logs are stored on the PI under logs/packet_parser.log
+
+
