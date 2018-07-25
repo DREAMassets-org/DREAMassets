@@ -2,3 +2,4 @@ env.sh
 .byebug_history
 *~
 logs/*
+secrets/*
