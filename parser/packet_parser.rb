@@ -86,7 +86,7 @@ measurement_bundle = []
 log.debug("Start Processing input data")
 log.debug("Current Settings: BUNDLE_SIZE #{BUNDLE_SIZE}")
 log.debug("Current Settings: BUCKET #{S3_BUCKET}")
-log.debug("Current Settings: DIRECTORY #{S3_DIRECTORY}")
+log.debug("Current Settings: DIRECTORY #{S3_BUCKET_DIRECTORY}")
 
 # Setup upload clients
 upload_clients = [ s3_client, google_storage_client ]
