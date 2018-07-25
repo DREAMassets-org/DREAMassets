@@ -25,9 +25,6 @@ gemfile(true) do
   source "https://rubygems.org"
   gem "aws-sdk-s3", '~> 1'
   gem "google-cloud-storage"
-
-  # for debugging
-  gem "pry-byebug"
 end
 
 # Require other ruby system libraries
