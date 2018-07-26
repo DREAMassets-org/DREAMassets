@@ -30,12 +30,12 @@ process_and_filter_fujitsu_packets() {
   # Replace those characters with nothing -- because there's nothing in the first two slashes "//"
   while read line; do
     # if this line is properly formatted (<packet contents>|<timestamp>)
-    # and if it matches our Fujitsu marker 010003000300
-    if [[ $line =~ ^(.*)\s+?\|\s+?(.*)$ ]] && [[$line =~ 010003000300]]; then
+    if [[ $line =~ ^(.*)\s+?\|\s+?(.*)$ ]]; then
       # then save matches (and trim whitespace with the echo) and return a JSON formatted string with the data
       local packet=`echo ${BASH_REMATCH[1]}`
       local timestamp=`echo ${BASH_REMATCH[2]}`
-      echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
+      # if this matches a fujitsu packet, echo the json
+      [[ $packet =~ 010003000300 ]] && echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
     fi
   done
 }
