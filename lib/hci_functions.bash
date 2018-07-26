@@ -102,10 +102,6 @@ process_and_filter_fujitsu_packets() {
   done
 }
 
-# As explained above, hcidump outputs raw BLE data packets that break across lines. 
-# We use a regex (regular expression) to identify a timestamp that comes before the data packet 
-# ??? can we simplify from WITH_TIMESTAMP_REGEX to TIMESTAMP_REGEX
-WITH_TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
 
 # This function reads and assembles the packet because packets span multiple lines and need to be aggregated. 
 # For example data from hcidump looks like this: 
@@ -124,34 +120,41 @@ WITH_TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
 # The function `read_blescan_packet_dump` aggregates a data packet that breaks across lines
 # The function outputs a complete packet and a timestamp 
 read_blescan_packet_dump() {
-  # start with an empty string(?)
+  # As explained above, hcidump outputs raw BLE data packets that break across lines. 
+  # We use a regex (regular expression) to identify a timestamp indicates the start of a transmission from a new BLE device  
+  TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
+
+  # start with an empty string
   packet=""
+
   # read a line 
   while read line; do
-    # the important thing to remember with this code is that 
-    # see if the line contains the regex timestamp indicating that it's the beginning of a BLE trasnmission from a new device
-    # if it doesn't  
-    # # When we see this regex, we know that we've reached the end of the previous packet 
-    # and look for the starting character ">" or with timestamp like "2018-07-18 10:56:08.151507 >"
-  
-    # packets start with ">" ### Mike got lost here. Are we actually looking for the beginning of the *next* packet??
-    if [[ $line =~ $WITH_TIMESTAMP_REGEX ]]; then
-      # extract the regex matches immediately
+    new_transmission=0
+    # check if the line contains our regex (timestamp) indicating that it's the beginning of a new trasnmission from a BLE device 
+    [[ $line =~ $TIMESTAMP_REGEX ]] && new_transmission=1
+
+      # store the values from the regex in the temporary variables for timestamp and packet, tmp_timestamp and tmp_packet 
       tmp_timestamp=${BASH_REMATCH[1]}
       tmp_packet=${BASH_REMATCH[2]}
 
+    # if it's not a new transmission, then add the new line to the previous packet we already started
+    if [[ $new_transmission == 0 ]]; then  
+      # continue building the packet
+      packet="$tmp_packet $line"
+
+    # otherwise it is a new transmission, so we need to output the previous packet and start a new packet   
+    else
+      # check that the previous packet isn't empty 
       if [ "$packet" ]; then
-        # remove > and whitespace from packet string
+        # remove > and whitespace from packet 
         clean_packet=${packet//[\ |>]/}
+        # output <packet> | <timestamp> 
         echo $clean_packet "|" $timestamp
       fi
 
       # start the new packet
       timestamp=$tmp_timestamp
       packet=$tmp_packet
-    else
-      # continue building the packet
-      packet="$packet $line"
     fi
   done
 }
