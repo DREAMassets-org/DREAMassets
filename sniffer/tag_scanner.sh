@@ -10,10 +10,10 @@
 # 0. Separate from this script, there are nearby beacons using Bluetooth Low Energy (BLE) to send out data packets in advertising/broadcast mode.
 #    This Bash script sits on a Raspbeery Pi and enables the RPi to capture those data packets for later processing.
 #
-# 1. Start the BLE scanner using the command: `sudo hcitool lescan --duplicates > /dev/null &`
+# 1. Start the BLE scanner using the command: `sudo hcitool lescan > /dev/null &`
 #    sudo = use the privelges of a superuser https://en.wikipedia.org/wiki/Sudo
 #    hcitool lescan = start the BLE scanner https://www.systutorials.com/docs/linux/man/1-hcitool/
-#    > /dull/null = redirect the output to a null file; we're throwing away the output. ">" is for files.
+#    > /dev/null = redirect the output to a null file; we're throwing away the output. ">" is for files.
 #    & = run this command in the background since we need to run hcitool and hcidump simultaneously
 #
 # 2. Verify that the scanner started using the command: `if [ "$(pidof hcitool)" ]; then`
