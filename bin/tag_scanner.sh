@@ -95,7 +95,8 @@
 
 # include the library we created with bash hci helper functions  
 script_root_dir="$(dirname "$0")"
-source "${script_root_dir}/../lib/hci_functions.bash"
+lib_dir="${script_root_dir}/../lib/bash/hci_functions.bash"
+source $lib_dir
 
 # this line ends hcitool when we hit ctrl-c since hcitool is running in the background
 trap halt_hcitool_lescan INT
