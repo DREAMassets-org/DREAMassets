@@ -10,6 +10,7 @@
 require 'ostruct'
 require 'optparse'
 require 'json'
+require 'fileutils'
 
 # require local ruby helpers and classes
 lib_dir = "../lib/ruby"
@@ -19,23 +20,25 @@ require_relative "#{lib_dir}/string.rb"
 # define (and package in a class) the configurator functions
 class Configurator
 
-  DATA_ATTRIBUTES = %i( rssi x_acceleration y_acceleration z_acceleration temperature )
+  CONFIGURATOR_DATA_DIR = ".configurator"
+  CONFIGURATOR_DATA_FILE = File.join(CONFIGURATOR_DATA_DIR, "configurator.json")
 
-  PREVIOUS_RUN_FILE = "previous_run.json"
   def self.setup(options)
     previous_rssis = {}
     now = Time.now.to_i
 
-    if File.exist?(PREVIOUS_RUN_FILE)
-      previous_rssis = JSON.parse(File.open(PREVIOUS_RUN_FILE).read)
-      previously_recorded_at = File.ctime(PREVIOUS_RUN_FILE).to_i
+    FileUtils.mkdir_p(CONFIGURATOR_DATA_DIR)
+
+    if File.exist?(CONFIGURATOR_DATA_FILE)
+      previous_rssis = JSON.parse(File.open(CONFIGURATOR_DATA_FILE).read)
+      previously_recorded_at = File.ctime(CONFIGURATOR_DATA_FILE).to_i
     end
 
-    seconds = options.scan_time
+    scan_time = options.scan_time
 
-    print "Scanning for ~#{seconds} seconds..."
+    print "Scanning for ~#{scan_time} seconds..."
     # here we add a little extra time to account for the fact that the scanner needs a few seconds to get started
-    measurements = scan_ble(seconds  + 3)
+    measurements = scan_ble(scan_time  + 3)
     puts "done"
 
     average_rssis = average_rssi_by_tag_id(measurements)
@@ -48,7 +51,7 @@ class Configurator
       delta_rssi = previous_rssi ? (previous_rssi - rssi) : "-"
       puts ConfiguratorTable.format_row([ format("(%d)", index + 1), tag_id.as_byte_pairs, rssi.to_s, delta_rssi.to_s])
     end
-    save_current_run(average_rssis,PREVIOUS_RUN_FILE)
+    save_current_run(average_rssis, CONFIGURATOR_DATA_FILE)
   end
 
   class ConfiguratorTable
