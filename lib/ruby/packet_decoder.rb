@@ -4,7 +4,6 @@ class PacketDecoder
   # We define the <names> and {number of characters} for each part of the REGEX
   PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
 
-
   def self.decode(packet_hex_string)
     return unless packet_hex_string && (match = PACKET_DATA_REGEX.match(packet_hex_string))
 

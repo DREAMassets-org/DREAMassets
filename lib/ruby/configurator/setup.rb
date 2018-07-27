@@ -74,7 +74,7 @@ module Configurator
       def load_previous_run
         return [{}, nil] unless File.exist?(CONFIGURATOR_DATA_FILE)
 
-        return [
+        [
           JSON.parse(File.open(CONFIGURATOR_DATA_FILE).read),
           File.ctime(CONFIGURATOR_DATA_FILE).to_i
         ]

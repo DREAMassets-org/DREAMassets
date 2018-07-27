@@ -1,6 +1,5 @@
 # Add a methods to the ruby String class
 class String
-
   # return a string as a set of byte pairs (assuming a hex input string)
   #
   # Ex.
