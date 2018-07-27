@@ -227,3 +227,8 @@ Notes:
 * Logs are stored on the PI under logs/packet_parser.log
 
 
+# Appendix
+
+## Code Organization
+
+Everything under the `bin` directory should be our executable scripts.  Examples are the `packet_parser.rb` and `tag_scanner.sh`.  Helper functions and other modules for both bash and ruby will live under the `lib` directory in their respective language named directories (e.g. `lib/ruby` holds all the ruby libraries and helper modules)
