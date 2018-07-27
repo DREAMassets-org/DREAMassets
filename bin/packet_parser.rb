@@ -21,7 +21,7 @@
 require 'bundler/inline'
 
 # go on the internet and get the DataDog api gem
-gemfile(true) do
+gemfile do
   source "https://rubygems.org"
   gem "google-cloud-storage"
 end
@@ -34,6 +34,7 @@ require 'io/console'
 lib_dir = "../lib/ruby"
 require_relative "#{lib_dir}/measurement.rb"
 require_relative "#{lib_dir}/google_cloud_storage_service.rb"
+require_relative "#{lib_dir}/packet_decoder.rb"
 
 # Setup Logger
 require 'logger'
@@ -48,10 +49,6 @@ log.info "Started Parsing Packets"
 
 # set the hub_id to the hostname
 HUB_ID = `hostname`.chomp
-
-# The raw Fujitsu data will arrive in this regular expression (REGEX)
-# We define the <names> and {number of characters} for each part of the REGEX
-PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
 
 # grab variables from the environemnt
 BUNDLE_SIZE = ENV.fetch("BUNDLE_SIZE", 100).to_i
@@ -108,25 +105,11 @@ while line = gets do
   end
 
   # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets
-  if (packet_data && (match = PACKET_DATA_REGEX.match(packet_data["packet_data"])))
-    timestamp = packet_data["timestamp"]
-    tag_id = match[:tag_id]
-    temperature = match[:temperature]
-    x_acc = match[:x_acc]
-    y_acc = match[:y_acc]
-    z_acc = match[:z_acc]
-    rssi = match[:rssi]
-
+  if (decoded_packet = PacketDecoder.decode(packet_data["packet_data"]))
     # put all the data in a new measurement
-    measurement = Measurement.new(
-      hub_id: HUB_ID,
-      timestamp: timestamp,
-      tag_id: tag_id,
-      hex_temperature: temperature,
-      hex_x_acc: x_acc,
-      hex_y_acc: y_acc,
-      hex_z_acc: z_acc,
-      hex_rssi: rssi)
+    puts decoded_packet.merge(hub_id: HUB_ID, timestamp: packet_data["timestamp"])
+    measurement = Measurement.new(**decoded_packet.merge(hub_id: HUB_ID, timestamp: packet_data["timestamp"]))
+
     # echo the new measurement to the console in CSV format -- this is purely informational
     $stdout.puts measurement.csv_row
 
@@ -147,4 +130,3 @@ if measurement_bundle.length > 0
   log.info "Sending the remaining #{measurement_bundle.length} measurements"
   upload_to_all_clients(upload_clients, measurement_bundle, log)
 end
-

@@ -30,7 +30,7 @@ class Measurement
   attr_reader :timestamp, :hub_id, :tag_id, :temperature, :x_acceleration, :y_acceleration, :z_acceleration, :rssi
 
   # Measurement expects to receive a data Measurement in hex format, which we conver to meaningful decimal values, according to Fujitsu's formulas
-  def initialize(timestamp:, hub_id:, tag_id:, hex_temperature:, hex_x_acc:, hex_y_acc:, hex_z_acc:, hex_rssi:)
+  def initialize(tag_id:, hex_temperature:, hex_x_acc:, hex_y_acc:, hex_z_acc:, hex_rssi:, hub_id: nil, timestamp: nil)
 
     # note to selves: for now, we're processing the fujitsu bytes into meaninful values
     # in the future, when we get a cloud server, it prolly'll make sense to do that processing in the cloud
@@ -40,7 +40,7 @@ class Measurement
 
     # set `timestamp` to the time-formatted time object
     # Time is a ruby class that has a `parse` method which converts a string to a time-formatted object
-    @timestamp = Time.parse(timestamp)
+    @timestamp = Time.parse(timestamp) if timestamp
 
     # the device ID is inverted (AB:CD:EF:GH arrives as GH:EF:CD:AB) so we need to un-invert it using flip_bytes().
     @tag_id = flip_bytes(tag_id)
@@ -58,11 +58,11 @@ class Measurement
   end
 
   # these are used to generate the csv and when we build a csv_row, the order should be consistent with the headers
-  CSV_HEADERS = %w( hub_id device temperature x_acceleration y_acceleration z_acceleration rssi timestamp ) 
+  CSV_HEADERS = %w( hub_id device temperature x_acceleration y_acceleration z_acceleration rssi timestamp )
   # When we visualize the data in the RPi terminal, we use CSV format
   def csv_row
     [
-      hub_id, 
+      hub_id,
       tag_id,
       "%2.2f" % temperature,
       ACCELERATION_FORMAT % x_acceleration,

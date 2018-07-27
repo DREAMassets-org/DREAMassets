@@ -1,70 +1,63 @@
 ######
-# This is a library of functions that Mike and Jon created for `tag_scanner.sh` and other bash scripts that need to read BLE data
 # This bash script includes several functions that help with scanning the BLE packets floating around in the ether.
 #
-# To use the bash script, you must have the `bluez` and `bluez-hcidump` packages installed on the RasPi 
-
+# To use these, you must have the `bluez` and `bluez-hcidump` packages installed
+#
 
 # begin BLE scanning
+# run output to the trash (/dev/null -- throw away the data stream)
+# & run this in the background
 start_hcitool_lescan() {
   sudo hcitool lescan > /dev/null &
-  # > /dev/null = throw away the data stream 
-  # &           = run this in the background
   sleep 2
-  # pause for 2 seconds to let hcitool start running before starting hcidump 
 }
 
-# Kill the hcitool process. We need to do this explicitly since it's running in the background. 
+# Kill the hcitool process
 halt_hcitool_lescan() {
   sudo pkill --signal SIGINT hcitool
 }
 
-# Start dumping BLE packets using the `hcidump` utility and include the timestamp when the packet arrived 
+# Start dumping BLE packets using the `hcidump` utility
 start_hcidump_stream() {
   sudo hcidump -t --raw
 }
 
-# This function `filter_and_JSONify_fujitsu_packets` receives a string from `aggregate_data_packet`: <packet contents>|<timestamp>  
-# `filter_and_JSONify_fujitsu_packets` returns a JSON-formatted string the Ruby script to process. 
-filter_and_JSONify_fujitsu_packets() {
+# Given a string like <packet contents>|<timestamp> (from read_blescan_packet_dump)
+# return a json formatted string for easier consumption outside of this function
+process_and_filter_fujitsu_packets() {
+  # take the first argument, $1, and set it to be the packet variable
+  # also, in the packet: find any character that is "\ " (escape-character white space) or ">" (a greater than character).
+  # Replace those characters with nothing -- because there's nothing in the first two slashes "//"
   while read line; do
-    # validate that the line is properly formatted (<packet contents>|<timestamp>)
+    # if this line is properly formatted (<packet contents>|<timestamp>)
     if [[ $line =~ ^(.*)\s+?\|\s+?(.*)$ ]]; then
-      # Store the <packet contents> and <timestamp> in the variables packet and timestamp
-      # We're working in Bash which sometimes causes a problem where extra blank spaces accidentally get loaded into variables
-      # So we can't just assign the values directly: packet=${BASH_REMATCH[1]}
-      # To fix this, we use `back ticks` to run the echo command which strips out any extra whitespace 
+      # then save matches (and trim whitespace with the echo) and return a JSON formatted string with the data
       local packet=`echo ${BASH_REMATCH[1]}`
       local timestamp=`echo ${BASH_REMATCH[2]}`
-      # We check whether the packet is a Fujitsu BLE beacon by whether it contains 010003000300
-      # If not, then we filter it out (no output). 
-      # If it's the Fujitsu we're looking for, then we echo (output) the packet and timestamp as a JSON.
+      # if this matches a fujitsu packet, echo the json
       [[ $packet =~ 010003000300 ]] && echo "{ \"timestamp\": \"$timestamp\", \"packet_data\": \"$packet\" }"
     fi
   done
 }
 
-# As explained above, hcidump outputs raw BLE data packets that break across lines. 
-# We use a regex (regular expression) to identify a timestamp that indicates the start of a new trasnmission from a BLE device 
-TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
+# This function reads and assembles the packet because packets span multiple lines and need to be built up
+# This function is unclear -- Mike and Jon to discuss
 
+WITH_TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
 
-# The function `aggregate_data_packet` aggregates a data packet that breaks across lines
-# The function outputs a complete packet and a timestamp 
-aggregate_data_packet() {
+# Read from an input stream that comes from `hcidump -t --raw` and return, for each packet, a string that
+# looks like
+#   <packet hex contents>|<timestamp>
+# The result should be easily parseable into the packet contents and timestamp with a regex like ^(.*)\s+?\|\s+?(.*)$
+# where the first match is the packet contents and the second is the timestamp string (2018-07-18 10:56:08.151507)
+read_blescan_packet_dump() {
+
   # start with an empty string(?)
   packet=""
-  # read a line 
+  # read a line and look for the starting character ">" or with timestamp like "2018-07-18 10:56:08.151507 >"
   while read line; do
-
-    # check if the `line` contains our `TIMESTAMP_REGEX`, which indicates the start of a new trasnmission from a BLE device 
-    # we extract values from the `line` and temporarily store them in `tmp_timestamp` and `tmp_packet` 
-    # if the line is not the beginning of a new transmission, then the line is a continuation of the previous line, 
-    #  so add the `line` to the previous `packet` we already started
-    # if the line contains a new transmission, then we output the previous `packet`. 
-    #  Then start a new packet by setting `packet`=`tmp_packet` and `timestamp`=`tmp_timestamp`
-  
-    if [[ $line =~ $TIMESTAMP_REGEX ]]; then
+    # packets start with ">" ### Mike got lost here. Are we actually looking for the beginning of the *next* packet??
+    if [[ $line =~ $WITH_TIMESTAMP_REGEX ]]; then
       # extract the regex matches immediately
       tmp_timestamp=${BASH_REMATCH[1]}
       tmp_packet=${BASH_REMATCH[2]}
@@ -72,7 +65,6 @@ aggregate_data_packet() {
       if [ "$packet" ]; then
         # remove > and whitespace from packet string
         clean_packet=${packet//[\ |>]/}
-        # output the previous packet 
         echo $clean_packet "|" $timestamp
       fi
 
