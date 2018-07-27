@@ -74,7 +74,11 @@ options = OpenStruct.new
 parser = OptionParser.new do |opts|
   opts.banner = options_banner
 
-  opts.on("-s", "--scan-time [SECONDS]", "How long to run the scan (in seconds)") do |val|
+  opts.on("-n", "--number-of-tags [NUMBER]", "Top N tags to consider during identification (for identify mode only)") do |val|
+    options.number_of_tags = val.to_i
+  end
+
+  opts.on("-s", "--scan-time [SECONDS]", "How long to run the scan (in seconds) (for setup mode only)") do |val|
     options.scan_time = val.to_i
   end
 

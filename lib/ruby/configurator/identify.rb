@@ -1,7 +1,7 @@
 module Configurator
   class Identify
-    def self.run(_options)
-      puts "IDENTIFY!"
+    def self.run(options)
+      puts "IDENTIFY!", options
     end
   end
 end
