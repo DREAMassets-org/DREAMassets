@@ -130,8 +130,6 @@ while line = gets do
     next unless decoded_packet
 
     # put all the data in a new measurement
-    puts decoded_packet.merge(hub_id: HUB_ID, timestamp: input_payload["timestamp"])
-    # put all the data in a new measurement
     # as soon as the Measurement class gets the hex input variables, it converts them to meaningful values (floats/integers)
     measurement = Measurement.new(**decoded_packet.merge(hub_id: HUB_ID, timestamp: input_payload["timestamp"]))
 
