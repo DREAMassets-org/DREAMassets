@@ -1,3 +1,5 @@
+# This library contains methods and functions for packet_parser.rb (and maybe other rb's)
+#
 # Ruby wrapper for our connection to GoogleCloudStorage
 # provides one primary method `#send` which takes an array of measurments and sends them to GoogleCloudStorage as a csv file
 
@@ -5,7 +7,8 @@ require 'google/cloud/storage'
 
 class GoogleCloudStorageService
 
-  # We need the hub_id (hostname of the hub), the bucket and optional directory in which to write the files
+  # We need the hub_id (hostname of the Raspberry Pi hub), the bucket in Google Storage and (optional) directory where we'll write the files
+  # the `directory` is optional; the other variables are manditory 
   def initialize(project_id, credentials_file, hub_id, bucket_name, directory: nil)
     @project_id = project_id
     @project_credentials_json_file = credentials_file
@@ -14,7 +17,7 @@ class GoogleCloudStorageService
     @directory = directory
   end
 
-  # Given an array of Measurement objects, serialize them as CSV and send them to GoogleCloudStorage in a file called "<hub id>-<timestamp>.csv"
+  # Given an array of Measurement objects, serialize them as CSVs and send them to GoogleCloudStorage in a file called "<hub id>-<timestamp>.csv"
   def upload(measurements)
     return unless measurements.length > 0
 
@@ -22,7 +25,7 @@ class GoogleCloudStorageService
   end
 
 
-  # client is the destination where we send our data. Client is a wrapper for a URL where we send our data
+  # client is the destination in Google Cloud where we send our data. Client is a wrapper for a URL where we send our data
   private
 
   def generate_filename

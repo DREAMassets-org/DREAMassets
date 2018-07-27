@@ -1,11 +1,62 @@
 #!/bin/bash
 # Declare that this is a Bash script
 # https://stackoverflow.com/questions/8967902/why-do-you-need-to-put-bin-bash-at-the-beginning-of-a-script-file
-
-# Jon pulled this Bash script for an iBeacon Scanner.  We reconfigured it for the DREAM project with Fujitsu beacons
-# The script was originally developed by Radius Networks for iBeacons. Here's the source:
-# http://stackoverflow.com/questions/21733228/can-raspberrypi-with-ble-dongle-detect-ibeacons?lq=1
-
+#
+# 
+# PROBLEM: 
+# We need to read, aggregate, filter, and JSON-ify the Bluethooth data to make it useful
+# RasPi gathers BLE data by running two commands simultaneously: `hcitool` and `hcidump`. 
+# The output from hcitool is a list of BLE tag IDs and labels, but no data.
+# The output from hcidump is a timestamp followed by raw BLE data packets. 
+#
+# Here's sample output of BLE device IDs and labels from `hcitool`: 
+# 1E:91:E8:B0:AF:DA (unknown)
+# 88:C6:26:CA:42:47
+# 7C:64:56:36:1F:D9 (unknown)
+# 2C:41:A1:03:20:5D LE-QC 35 V2
+# B0:34:95:38:82:5D (unknown)
+# 88:C6:26:CA:42:47 (unknown)
+# D4:A1:BD:1F:46:F2 (unknown)
+# 21:D6:07:DF:B1:04 (unknown)
+# 
+# We don't care about most of the BLE devices in this output -- which is why we need to filter data.
+# The BLE device ID `D4:A1:BD:1F:46:F2` is a Fujitsu beacon -- we're calling these "tags" and we need their data. 
+# We only use hcitool because hcidump won't work without it.  This bash script just discards the output from hcitool  
+# 
+# Here's sample output of timestamps and raw BLE data packets from hcidump:
+# 2018-07-26 21:15:45.220743 > 04 3E 0C 02 01 04 00 1E 4F A2 89 5C F4 00 A9
+# 2018-07-26 21:15:45.249505 > 04 3E 17 02 01 00 00 F5 73 9A 08 40 6C 0B 02 01 06 07 FF 4C
+#   00 10 02 0B 00 A0
+# 2018-07-26 21:15:45.272482 > 04 3E 21 02 01 03 01 F2 46 1F BD A1 D4 15 02 01 04 11 FF 59
+#   00 01 00 03 00 03 00 FC 01 77 00 45 00 0A 08 BC
+# 2018-07-26 21:15:45.332024 > 04 3E 2B 02 01 03 01 39 43 86 CC 64 0F 1F 1E FF 06 00 01 09
+#   20 02 58 0C 2B A8 AB D3 6C 9A 4D 5F 39 99 0C 77 56 C1 3E 9D
+#   84 E9 C1 E4 29 A2
+# 2018-07-26 21:15:45.348606 > 04 3E 17 02 01 00 01 34 4E 89 F2 B8 74 0B 02 01 06 07 FF 4C
+#   00 10 02 0B 00 A5
+# 2018-07-26 21:15:45.349272 > 04 3E 0C 02 01 04 01 34 4E 89 F2 B8 74 00 A7
+# 2018-07-26 21:15:45.382297 > 04 3E 17 02 01 00 00 48 E6 C9 32 BC AC 0B 02 01 06 07 FF 4C
+#   00 10 02 0B 00 A7
+# 
+# Again, our BLE scanner picks up tons of devices. We need to filter down this output to the Fujitsu tags we care about. 
+# In raw format, the Fujitsu tag ID D4:A1:BD:1F:46:F2 becomes inverted to `F2 46 1F BD A1 D4` (shown above)
+# The bytes `00 01 00 03 00 03 00` are an identifier (010003000300) that this is a Fujitsu beacon
+# The bytes `FC 01 77 00 45 00 0A 08 BC` are useful information: temp, x-axis acceleration, y acceleration, z acceleration and RSSI.
+# Fujitsu's documentation explains how to convert the bytes to meaningful decimal values. 
+# 
+# Another problem is that the output from hcidump breaks across lines
+# 
+# SOLUTION
+# This bash script takes the output from hcidump and then 
+# (1) Aggregates data for each BLE device across line breaks. 
+# (2) Filters the output to be only data from Fujitsu beacons (i.e., containing the identifier 010003000300)
+# (3) Outputs a JSON with the timestamp and data packet: Fujitsu beacon tag ID, measurement data, and other junk data. 
+#
+# The function `aggregate_data_packet` does step (1)
+# The function `filter_and_JSONify_fujitsu_packets` does steps (2) and (3)
+# There's a separate Ruby script that uses those JSONs as input, processes the measurement data from bytes to meaningful decimal values, and sends the values to Google Cloud 
+# 
+# 
 # Here's how our modified DREAM script works
 # 0. Separate from this script, there are nearby beacons using Bluetooth Low Energy (BLE) to send out data packets in advertising/broadcast mode.
 #    This Bash script sits on a Raspbeery Pi and enables the RPi to capture those data packets for later processing.
