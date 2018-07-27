@@ -159,30 +159,9 @@ F2461FBDA1D4,77.28 degF,0.029,0.029,-1.026,194
 which is a CSV format with columns "Device ID (UUID), Temperature (degF), x acceleration, y acceleration, z_acceleration, rssi".
 Acceleration is measured in g's.  Rssi units are currently unknown but run from 0 to 255.
 
-## DataDog as remote storage
+## Google Cloud  as remote storage
 
-We are using DataDog (https://www.datadoghq.com/) as a first cut data storage and visualization tool.  To get the scripts sending data to DataDog, you need
-to do the following.
-
-1.  Signup for DataDog
-1.  Get your API_KEY (this page shows you how to find your API key once your account is setup)
-1.  Run the script on your PI like so
-
-```bash
-bin/tag_scanner.sh | bin/packet_parser.rb
-
-```
-Check out the deployment notes below about how we can use `screen` to better manage what's running on each hub.
-
-If you don't have a DataDog account, you can still run things.  The script will simply not send data to the cloud.  You can do this with
-
-```bash
-bin/tag_scanner.sh | bin/packet_parser.rb
-```
-
-## Required environment variables on the Hub
-
-Because we're hooking up to google, we need to setup the following variables in our environment
+Because we're hooking up to Google, we need to setup the following variables in our environment
 which will allow us to authenticate properly and use the google services through our scripts
 
 ```
@@ -193,7 +172,18 @@ GOOGLE_CREDENTIALS_JSON_FILE="./secrets/your google credentials.json"
 ```
 
 These are often bundled in a `env.sh` file which we can store on the hub (not in Github since it has sensitive information).
+Also, make sure you actually have a secrets file in place.
 Before running the scripts, we can `source env.sh` to set all those variables in our running bash environment.
+
+Once these are set, you can start collecting data with
+```bash
+source env.sh
+bin/tag_scanner.sh | bin/packet_parser.rb
+
+```
+
+## Required environment variables on the Hub
+
 
 ## Deployment on Raspberry PIs
 
