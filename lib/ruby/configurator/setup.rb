@@ -72,11 +72,12 @@ module Configurator
       end
 
       def load_previous_run
-        if File.exist?(CONFIGURATOR_DATA_FILE)
-          previous_rssis = JSON.parse(File.open(CONFIGURATOR_DATA_FILE).read)
-          previously_recorded_at = File.ctime(CONFIGURATOR_DATA_FILE).to_i
-        end
-        [previous_rssis, previously_recorded_at]
+        return [{}, nil] unless File.exist?(CONFIGURATOR_DATA_FILE)
+
+        return [
+          JSON.parse(File.open(CONFIGURATOR_DATA_FILE).read),
+          File.ctime(CONFIGURATOR_DATA_FILE).to_i
+        ]
       end
 
       def ensure_configurator_directory

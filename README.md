@@ -182,7 +182,7 @@ bin/tag_scanner.sh | bin/packet_parser.rb
 
 ## Required environment variables on the Hub
 
-Because we're hooking up to google, we need to setup the following variables in our environment 
+Because we're hooking up to google, we need to setup the following variables in our environment
 which will allow us to authenticate properly and use the google services through our scripts
 
 ```
@@ -206,10 +206,10 @@ ssh pi@the_pi_name
 
 1. connect to the remote screen (if it exists)
 ```
-# try 
+# try
 screen -r
 # if it says there is no screen to connect to then
-screen 
+screen
 ```
 
 1. If the PI is collecting data, connecting to the screen should show you some data.  You can use Ctrl+C to kill that process and exit the screen
@@ -217,7 +217,7 @@ screen
 1. restart the collection process
 
 ```
-source env.sh && bin/tag_scanner.sh | bin/packet_parser.rb 
+source env.sh && bin/tag_scanner.sh | bin/packet_parser.rb
 ```
 
 1. exit from the screen with Ctrl+A Ctrl+D
@@ -226,6 +226,47 @@ source env.sh && bin/tag_scanner.sh | bin/packet_parser.rb
 Notes:
 * Logs are stored on the PI under logs/packet_parser.log
 
+## Configurator
+
+The Configurator is a tool that will help us find and identify Fujitsu tags in the neighborhood.  It is expected to be run
+on a dedicated Raspberry Pi.
+
+### Setup Mode
+
+To run it:
+```
+bin/configurator setup -s 10
+```
+This will (under the hood) use `bin/tag_scanner.sh` to listen for Fujitsu tags and report back the found tag id's and their
+current RSSI.  On subsequent runs, it will also include in the report, the last time setup was run and the delta in RSSI for
+any tags it may have seen last time and this time.  In the case where the tag was not seen in the previous run, the
+`Δ RSSI` will report `-`.
+
+Sample Output:
+```
+pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
+Scanning for ~3 seconds...done
+(#)  Tag ID               RSSI   Δ RSSI Previously Run 1532726366 secs ago
+(1)  D446 77E9 62B0          -24      -
+(2)  E175 6F50 EBE2          -25      -
+(3)  F78C DC99 BF71          -48      -
+(4)  D0D7 CA18 963F          -55      -
+(5)  D5BB 5CB3 0C1C          -61      -
+(6)  E294 B4AF 9313          -65      -
+(7)  F991 FBD4 0C78          -74      -
+(8)  C466 3179 CEDF          -79      -
+
+pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
+Scanning for ~3 seconds...done
+(#)  Tag ID               RSSI   Δ RSSI Previously Run 79 secs ago
+(1)  D446 77E9 62B0          -24      0
+(2)  F78C DC99 BF71          -40     -8
+(3)  E294 B4AF 9313          -50    -15
+(4)  F991 FBD4 0C78          -58    -16
+(5)  D0D7 CA18 963F          -62      7
+(6)  D5BB 5CB3 0C1C          -67      6
+(7)  C466 3179 CEDF          -74     -5
+```
 
 # Appendix
 
