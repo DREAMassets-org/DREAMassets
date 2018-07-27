@@ -7,10 +7,10 @@
 # It is expected to run on a Raspberry Pi and will listen for BLE devices in the vicinity and report
 # what it finds
 
-require 'ostruct'
-require 'optparse'
-require 'json'
-require 'fileutils'
+require "ostruct"
+require "optparse"
+require "json"
+require "fileutils"
 
 # require local ruby helpers and classes
 lib_dir = "../lib/ruby"
@@ -19,8 +19,7 @@ require_relative "#{lib_dir}/packet_decoder.rb"
 require_relative "#{lib_dir}/string.rb"
 # define (and package in a class) the configurator functions
 class Configurator
-
-  CONFIGURATOR_DATA_DIR = ".configurator"
+  CONFIGURATOR_DATA_DIR = ".configurator".freeze
   CONFIGURATOR_DATA_FILE = File.join(CONFIGURATOR_DATA_DIR, "configurator.json")
 
   def self.setup(options)
@@ -38,24 +37,24 @@ class Configurator
 
     print "Scanning for ~#{scan_time} seconds..."
     # here we add a little extra time to account for the fact that the scanner needs a few seconds to get started
-    measurements = scan_ble(scan_time  + 3)
+    measurements = scan_ble(scan_time + 3)
     puts "done"
 
     average_rssis = average_rssi_by_tag_id(measurements)
     age = now - previously_recorded_at.to_i
 
     puts ConfiguratorTable.format_header(["(#)", "Tag ID", "RSSI", "Δ RSSI", "Previously Run #{age} secs ago"])
-    average_rssis.sort_by { |tag_id, rssi| -rssi }.each_with_index do |(tag_id, rssi), index|
+    average_rssis.sort_by { |_tag_id, rssi| -rssi }.each_with_index do |(tag_id, rssi), index|
       previous_rssi = previous_rssis[tag_id]
 
       delta_rssi = previous_rssi ? (previous_rssi - rssi) : "-"
-      puts ConfiguratorTable.format_row([ format("(%d)", index + 1), tag_id.as_byte_pairs, rssi.to_s, delta_rssi.to_s])
+      puts ConfiguratorTable.format_row([format("(%d)", index + 1), tag_id.as_byte_pairs, rssi.to_s, delta_rssi.to_s])
     end
     save_current_run(average_rssis, CONFIGURATOR_DATA_FILE)
   end
 
   class ConfiguratorTable
-    ROW_COLUMN_SIZE_MAP = [ 4, 20, 6, 6 ]
+    ROW_COLUMN_SIZE_MAP = [4, 20, 6, 6].freeze
 
     def self.format_header(row)
       [
@@ -83,7 +82,7 @@ class Configurator
     # Save the current set of rolled up data in a json file so we can
     # report the changes between the current run and the last time this was run
     def save_current_run(aggregated_measurements, filename)
-      fp = File.open(filename, 'w')
+      fp = File.open(filename, "w")
       fp.write(JSON.generate(aggregated_measurements))
       fp.close
     end
@@ -106,7 +105,7 @@ class Configurator
       # collect some packets
       IO.popen(cmd) do |io|
         end_time = Time.now.to_i + num_seconds
-        while (line = io.gets) do
+        while (line = io.gets)
           # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets
           begin
             packets << JSON.parse(line)
@@ -118,11 +117,11 @@ class Configurator
       end
 
       # extract measurements from the collected packets
-      measurements = packets.compact.map { |packet| Measurement.new( **PacketDecoder.decode(packet["packet_data"]) ) }
+      measurements = packets.compact.map { |packet| Measurement.new(**PacketDecoder.decode(packet["packet_data"])) }
     end
 
     def average(numbers)
-      numbers.inject(&:+) / numbers.length
+      numbers.reduce(&:+) / numbers.length
     end
   end
 end
@@ -157,7 +156,7 @@ options_banner = """
 This configurator should be used to identify BLE Fujitu tags near the hub running it.
 It is expected to be running on a RaspberryPi.
 
-Usage: #{$0} <command> [options]
+Usage: #{$PROGRAM_NAME} <command> [options]
 
 <command> should be one of \"setup\" or \"identify\"
 
@@ -166,14 +165,14 @@ Options:
 
 # Parse command line arguments
 options = OpenStruct.new
-parser = OptionParser.new do|opts|
+parser = OptionParser.new do |opts|
   opts.banner = options_banner
 
-  opts.on('-s', '--scan-time [SECONDS]', "How long to run the scan (in seconds)") do |val|
+  opts.on("-s", "--scan-time [SECONDS]", "How long to run the scan (in seconds)") do |val|
     options.scan_time = val.to_i
   end
 
-  opts.on('-h', '--help', 'Displays Help') do
+  opts.on("-h", "--help", "Displays Help") do
     puts banner
     puts opts
     exit
@@ -184,8 +183,10 @@ parser.parse!
 
 command = ARGV.shift
 
-if !command
+unless command
+  puts "***"
   puts "*** You need to specify a command"
+  puts "***"
   puts parser
   exit
 end
