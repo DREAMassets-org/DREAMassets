@@ -25,7 +25,7 @@ Make sure you are on the **same wireless network** as it will only be availble w
 1. Disconnect your RPi from the monitor, keyboard and mouse and put it in whatever location is most convenient for you.
 
 ## Get the RPi ready for Bluetooth Low Energy (BLE)
-We need a few extra packages for the Pi to be a BLE sniffer.  First get dependencies for [Bluez](http://www.bluez.org/):
+We need a few extra packages for the Pi to be a BLE scanner.
 
 ```
 # Get the machine the latest list of software and the latest software
@@ -112,7 +112,7 @@ A small bash script can be used to sniff/scan BLE packets that match our desired
 From the root project directory, you can run
 
 ```bash
-sniffer/tag_scanner.sh
+bin/tag_scanner.sh
 ```
 
 This will report a list of packets that it has collected.   Each packet is written out in the following format
@@ -125,14 +125,14 @@ which include the timestamp (in seconds since the [Epoch](https://www.epochconve
 To get all this in a file you can read later
 
 ```bash
-sniffer/tag_scanner.sh > sniffed_packets.txt
+bin/tag_scanner.sh > sniffed_packets.txt
 ```
 
 Logic to unpack that is in the parser.
 
 ## Parser
 
-Using a short ruby script, you can parse the data from the sniffer.
+Using a short ruby script, you can parse the data from the scanner.
 
 
 Since we're using ruby, you'll need to make sure you have `bundler` available to ruby.  This is a one time setup.  On your Pi simply run
@@ -140,10 +140,10 @@ Since we're using ruby, you'll need to make sure you have `bundler` available to
 sudo gem install bundler
 ```
 
-Assuming you've saved the sniffer data in a file called `sniffed_packets.txt`, you'd run
+Assuming you've saved the scanner data in a file called `packets.txt`, you'd run
 
 ```
-cat sniffed_packets.txt | parser/packet_parser.rb
+cat packets.txt | bin/packet_parser.rb
 ```
 
 and you should get an output like
@@ -169,7 +169,7 @@ to do the following.
 1.  Run the script on your PI like so
 
 ```bash
-sniffer/tag_scanner.sh | parser/packet_parser.rb
+bin/tag_scanner.sh | bin/packet_parser.rb
 
 ```
 Check out the deployment notes below about how we can use `screen` to better manage what's running on each hub.
@@ -177,7 +177,7 @@ Check out the deployment notes below about how we can use `screen` to better man
 If you don't have a DataDog account, you can still run things.  The script will simply not send data to the cloud.  You can do this with
 
 ```bash
-sniffer/tag_scanner.sh | parser/packet_parser.rb
+bin/tag_scanner.sh | bin/packet_parser.rb
 ```
 
 ## Required environment variables on the Hub
@@ -217,7 +217,7 @@ screen
 1. restart the collection process
 
 ```
-source env.sh && sniffer/tag_scanner.sh | parser/packet_parser.rb 
+source env.sh && bin/tag_scanner.sh | bin/packet_parser.rb 
 ```
 
 1. exit from the screen with Ctrl+A Ctrl+D

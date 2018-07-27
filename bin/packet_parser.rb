@@ -31,8 +31,9 @@ require 'json'
 require 'io/console'
 
 # require local ruby helpers and classes
-require_relative "./lib/measurement.rb"
-require_relative "./lib/google_cloud_storage_service.rb"
+lib_dir = "../lib/ruby"
+require_relative "#{lib_dir}/measurement.rb"
+require_relative "#{lib_dir}/google_cloud_storage_service.rb"
 
 # Setup Logger
 require 'logger'
