@@ -1,5 +1,5 @@
-require 'json'
-require 'io/console'
+require "json"
+require "io/console"
 require "curses"
 
 lib_dir = ".."
@@ -10,7 +10,6 @@ require_relative "#{lib_dir}/string.rb"
 module Configurator
   class Identify
     def self.run(options)
-
       Curses.init_screen
       Curses.start_color
       Curses.use_default_colors
@@ -23,8 +22,7 @@ module Configurator
         exit
       end
 
-
-      while true
+      loop do
         ctr = 0
 
         measurements = scan_for_tags(number_of_tags)
@@ -33,7 +31,7 @@ module Configurator
         # end.sort_by { |tag_id, measurements| derivative(&:z_acceleration).
 
         measurements.each_with_index do |measurement, index|
-          Curses.setpos(index + 1, 0);
+          Curses.setpos(index + 1, 0)
           Curses.addstr([index, measurement.tag_id, measurement.z_acceleration].join(","))
           Curses.refresh
         end
@@ -41,7 +39,6 @@ module Configurator
     end
 
     class << self
-
       private
 
       def scan_for_tags(number_of_tags)

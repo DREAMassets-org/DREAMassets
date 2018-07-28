@@ -8,7 +8,7 @@
 # what it finds
 
 # Use the bundler library to get external libraries from the internet
-require 'bundler/inline'
+require "bundler/inline"
 
 # Get curses library
 gemfile do
@@ -29,10 +29,8 @@ require_relative "#{lib_dir}/configurator/identify.rb"
 
 # define (and package in a class) the configurator functions
 module Configurator
-
   # This is the main routine for the configurator when you are running in identification mode
   def self.identify(options)
-
     # Because we're running a windowed app, trap interupt events
     def onsig(sig)
       Curses.close_screen
@@ -40,8 +38,8 @@ module Configurator
     end
 
     for i in %w[HUP INT QUIT TERM]
-      if trap(i, "SIG_IGN") != 0 then  # 0 for SIG_IGN
-        trap(i) {|sig| onsig(sig) }
+      if trap(i, "SIG_IGN") != 0 # 0 for SIG_IGN
+        trap(i) { |sig| onsig(sig) }
       end
     end
 
@@ -52,7 +50,6 @@ module Configurator
   def self.setup(options)
     Setup.run(options)
   end
-
 end
 
 banner = """

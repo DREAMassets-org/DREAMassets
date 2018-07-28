@@ -31,7 +31,7 @@
 #
 
 # Use the bundler library to get external libraries from the internet
-require 'bundler/inline'
+require "bundler/inline"
 
 # go on the internet and get the Google Cloud Storage api gem
 gemfile(true) do
@@ -40,8 +40,8 @@ gemfile(true) do
 end
 
 # Require other ruby system libraries
-require 'json'
-require 'io/console'
+require "json"
+require "io/console"
 
 # require local ruby helpers and classes, which we made for this project
 lib_dir = "../lib/ruby"
@@ -50,9 +50,9 @@ require_relative "#{lib_dir}/google_cloud_storage_service.rb"
 require_relative "#{lib_dir}/packet_decoder.rb"
 
 # Setup Logger
-require 'logger'
+require "logger"
 
-logfile = File.open('logs/packet_parser.log', File::WRONLY | File::APPEND | File::CREAT)
+logfile = File.open("logs/packet_parser.log", File::WRONLY | File::APPEND | File::CREAT)
 log = Logger.new(logfile)
 log.level = Logger.const_get(ENV.fetch("LOG_LEVEL", "WARN").upcase)
 log.datetime_format = "%Y-%m-%d %H:%M:%S"
@@ -70,8 +70,8 @@ PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})0
 # Each version of this project has it's own unique `env.sh` file that contains personal secret credentials to run this project
 # Before starting this shell script, the user must run `source env.sh` to include env.sh in the Unix environmental variables (ENV.fetch("...")).
 # These variables allow us to send data to our Google Project
-GOOGLE_PROJECT_ID=ENV.fetch("GOOGLE_PROJECT_ID")
-GOOGLE_CREDENTIALS_JSON=ENV.fetch("GOOGLE_CREDENTIALS_JSON_FILE")
+GOOGLE_PROJECT_ID = ENV.fetch("GOOGLE_PROJECT_ID")
+GOOGLE_CREDENTIALS_JSON = ENV.fetch("GOOGLE_CREDENTIALS_JSON_FILE")
 # our defaults values are "dream-assets-orange" and "measurements"
 GOOGLE_BUCKET = ENV.fetch("GOOGLE_BUCKET", "dream-assets-orange")
 GOOGLE_BUCKET_DIRECTORY = ENV.fetch("GOOGLE_BUCKET_DIRECTORY", "measurements")
@@ -100,24 +100,22 @@ log.debug("Current Settings: GOOGLE DIRECTORY #{GOOGLE_BUCKET_DIRECTORY}")
 log.debug("Start Processing input data")
 
 # Setup upload clients for Google Storage
-upload_clients = [ google_storage_client ]
+upload_clients = [google_storage_client]
 
 # This code only uses one client (Google Cloud) but
 # `upload_to_all_clients` allows us to send data to other clients easily
 def upload_to_all_clients(clients, measurement_bundle, logger)
-  begin
-    clients.each do |client|
-      logger.info("Sending to #{client.class.name}")
-      client.upload(measurement_bundle)
-    end
-  rescue Exception => ex
-    logger.error("Something went wrong : #{ex}")
-    logger.debug(ex.backtrace)
+  clients.each do |client|
+    logger.info("Sending to #{client.class.name}")
+    client.upload(measurement_bundle)
   end
+rescue Exception => ex
+  logger.error("Something went wrong : #{ex}")
+  logger.debug(ex.backtrace)
 end
 
 # Each line is an `input_payload` that contains a packet of data (`packet_data`) and a time stamp (`timestamp`).
-while line = gets do
+while line = gets
   next unless line
   line.chomp!
   begin
@@ -156,7 +154,7 @@ end
 
 log.info "Hit the end of the stream."
 # finally send whatever we might have left if we get to the end of the input data stream
-if measurement_bundle.length > 0
+if !measurement_bundle.empty?
   log.info "Sending the remaining #{measurement_bundle.length} measurements"
   upload_to_all_clients(upload_clients, measurement_bundle, log)
 end
