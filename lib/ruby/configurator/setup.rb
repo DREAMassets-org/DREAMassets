@@ -34,12 +34,17 @@ module Configurator
     CONFIGURATOR_DATA_FILE = File.join(CONFIGURATOR_DATA_DIR, "configurator.json")
 
     def self.run(options)
+      scan_time = options.scan_time
+
+      if scan_time.to_i <= 0
+        puts "*** You must specify a scan_time that is greater than 0"
+        exit
+      end
+
       previous_rssis = {}
       now = Time.now.to_i
 
       previous_rssis, previously_recorded_at = load_previous_run
-
-      scan_time = options.scan_time
 
       print "Scanning for ~#{scan_time} seconds..."
       # here we add a little extra time to account for the fact that the scanner needs a few seconds to get started

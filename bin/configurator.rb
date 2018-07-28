@@ -7,10 +7,20 @@
 # It is expected to run on a Raspberry Pi and will listen for BLE devices in the vicinity and report
 # what it finds
 
+# Use the bundler library to get external libraries from the internet
+require 'bundler/inline'
+
+# Get curses library
+gemfile do
+  source "https://rubygems.org"
+  gem "curses"
+end
+
 require "ostruct"
 require "optparse"
 require "json"
 require "fileutils"
+require "curses"
 
 # require local ruby helpers and classes
 lib_dir = "../lib/ruby"
@@ -22,6 +32,19 @@ module Configurator
 
   # This is the main routine for the configurator when you are running in identification mode
   def self.identify(options)
+
+    # Because we're running a windowed app, trap interupt events
+    def onsig(sig)
+      Curses.close_screen
+      exit sig
+    end
+
+    for i in %w[HUP INT QUIT TERM]
+      if trap(i, "SIG_IGN") != 0 then  # 0 for SIG_IGN
+        trap(i) {|sig| onsig(sig) }
+      end
+    end
+
     Identify.run(options)
   end
 

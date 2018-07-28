@@ -44,6 +44,11 @@ For remote usage we should also probably get `screen`
 sudo apt-get install screen -y
 ```
 
+For the configurator machine only, you'll also need the `curses` library
+```
+sudo apt-get libncurses5-dev libncursesw5-dev ruby-dev
+```
+
 Bluez provides the commands `hcitool` and `hcidump` which are the main tools we (probably) will be using to interact with Bluetooth.
 
 To start sniffing, open 2 consoles on the Pi.  In the first console, start up a scanner

@@ -6,10 +6,9 @@ module Configurator
   class BLEScanner
     def self.run(seconds = 5)
       packets = []
-      cmd = "#{__dir__}/../../../bin/tag_scanner.sh 2> /dev/null"
 
       # collect some packets
-      IO.popen(cmd) do |io|
+      scan do |io|
         end_time = Time.now.to_i + seconds
         while (line = io.gets)
           # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets
@@ -24,6 +23,13 @@ module Configurator
 
       # extract measurements from the collected packets
       measurements = packets.compact.map { |packet| Measurement.new(**PacketDecoder.decode(packet["packet_data"])) }
+    end
+
+    def self.scan(&block)
+      cmd = "#{__dir__}/../../../bin/tag_scanner.sh 2> /dev/null"
+      IO.popen(cmd) do |io|
+        block.call(io)
+      end
     end
   end
 end
