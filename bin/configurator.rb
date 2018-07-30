@@ -8,14 +8,7 @@
 # what it finds
 
 # Use the bundler library to get external libraries from the internet
-require "bundler/inline"
-
-# Get curses library
-gemfile do
-  source "https://rubygems.org"
-  gem "curses"
-end
-
+require "bundler"
 require "ostruct"
 require "optparse"
 require "json"

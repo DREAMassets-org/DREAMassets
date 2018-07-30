@@ -43,7 +43,10 @@ class TestMeasurementGrid < Minitest::Test
     assert_equal(@grid.length, 9)
   end
 
-  def test_timestamps; end
+  def test_derivatives
+    assert_equal(@grid.derivatives("BBAA"), [0, 0, 0, 1.0302734375, 0, 0, 0, -0.908203125])
+    assert_equal(@grid.derivatives("BBCC"), [0,0,0,0,0, 0.06103515625])
+  end
 
   def test_values
     assert_equal(@grid.values("BBAA"), [nil, nil, nil, nil, 1.0302734375, 1.0302734375, 1.0302734375, 1.0302734375, 0.1220703125])

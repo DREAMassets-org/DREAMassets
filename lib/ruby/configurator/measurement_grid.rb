@@ -29,11 +29,17 @@ class MeasurementGrid
     @grid[measurement.tag_id] = tag_entries
   end
 
+  def derivatives(tag)
+    derivative(self.values(tag))
+  end
+
   def values(tag)
     @grid[tag]
   end
 
-  def timestamps
-    @grid.keys.times.map
+  private
+  def derivative(data)
+    return [0] if data.length == 1
+    data.map{|v| v.to_f}.each_cons(2).map { |x, y| y - x }
   end
 end

@@ -31,13 +31,7 @@
 #
 
 # Use the bundler library to get external libraries from the internet
-require "bundler/inline"
-
-# go on the internet and get the Google Cloud Storage api gem
-gemfile(true) do
-  source "https://rubygems.org"
-  gem "google-cloud-storage"
-end
+require "bundler"
 
 # Require other ruby system libraries
 require "json"
