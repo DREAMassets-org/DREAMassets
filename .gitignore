@@ -3,3 +3,7 @@ env.sh
 *~
 logs/*
 googledata/
+
+# vi/emacs temp files
+\#*
+\*~

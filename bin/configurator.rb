@@ -102,6 +102,10 @@ parser = OptionParser.new do |opts|
     options.scan_time = val.to_i
   end
 
+  opts.on("-D", "--debug", "Debug mode... just scroll the output") do
+    options.debug = true
+  end
+
   opts.on("-h", "--help", "Displays Help") do
     puts banner
     puts opts

@@ -4,8 +4,8 @@ require_relative "#{lib_dir}/packet_decoder.rb"
 
 module Configurator
   class BLEScanner
-    def self.run(seconds = 5)
-      packets = []
+    def self.run(seconds = 2)
+      input_payloads = []
 
       # collect some packets
       scan do |io|
@@ -13,7 +13,7 @@ module Configurator
         while (line = io.gets)
           # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets
           begin
-            packets << JSON.parse(line)
+            input_payloads << JSON.parse(line)
           rescue JSON::ParserError => ex
             # skip packets we can't decode
           end
@@ -22,7 +22,10 @@ module Configurator
       end
 
       # extract measurements from the collected packets
-      measurements = packets.compact.map { |packet| Measurement.new(**PacketDecoder.decode(packet["packet_data"])) }
+      input_payloads.compact.map do |payload|
+        decoded_packet = PacketDecoder.decode(payload["packet_data"]).merge(timestamp: payload["timestamp"])
+        Measurement.new(**decoded_packet)
+      end
     end
 
     def self.scan(&block)
