@@ -1,5 +1,5 @@
 class MeasurementGrid
-  FLIPPED_THRESHOLD = 0.7
+  FLIPPED_THRESHOLD = 0.5
 
   def initialize(attribute, window_size: 80, expected_tags: nil)
     @grid = {}
@@ -50,8 +50,8 @@ class MeasurementGrid
   end
 
   def flipped(tag)
-    # more than 0.7 g difference in acceleration which should represent a flip
-    derivatives(tag).map { |v| (v.abs > 0.7) ? "|" : "." }
+    # more than FLIPPED_THRESHOLD g difference in acceleration which should represent a flip
+    derivatives(tag).map { |v| (v.abs > FLIPPED_THRESHOLD) ? "|" : "." }
   end
 
   def derivatives(tag)
