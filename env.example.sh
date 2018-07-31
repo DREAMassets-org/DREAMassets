@@ -3,9 +3,8 @@
 export GOOGLE_PROJECT_ID=bogus-project-ID
 export GOOGLE_BUCKET=bogus-bucket
 export GOOGLE_DIRECTORY=bogus-directory
-# This environmental file looks for you credentials.json in the /secrets folder. 
-# You need to remove the credentials.example.json file that we've put there.
-export GOOGLE_CREDENTIALS_JSON_FILE="./secrets/credentials.example.json"
+# This environmental file looks for you credentials.json in the /secrets folder to get the key to your Service account in Google Cloud Storage. 
+export GOOGLE_CREDENTIALS_JSON_FILE="./secrets/credentials.json"
 
 # optionals
 export BUNDLE_SIZE=15
