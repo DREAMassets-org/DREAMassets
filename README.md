@@ -267,38 +267,46 @@ Scanning for ~3 seconds...done
 
 To run it:
 ```
-bin/configurator setup -s 10
+bin/configurator.rb identify -n 5
 ```
-This will (under the hood) use `bin/tag_scanner.sh` to listen for Fujitsu tags and report back the found tag id's and their
-current RSSI.  On subsequent runs, it will also include in the report, the last time setup was run and the delta in RSSI for
-any tags it may have seen last time and this time.  In the case where the tag was not seen in the previous run, the
-`Δ RSSI` will report `-`.
+
+where `n` represents the number of tags you are looking for.  The configurator will pick the closest 5 tags (from the last run
+of setup and sorted by RSSI) and look for only those.
+
+This interactive application will show the activity of each tag that it's watching.  Idle shows a `.`.  When a tag is flipped
+you'll see a `|`.
+
+e.g.
+
+For one tag that has one flip, you might see this:
+
+```
+EDA9 5A3F 8FE0	.................|......
+```
+
+Additional data is reported periodically (about every 2 or 3 seconds).  When you are finished flipping tags, hit `Ctrl+C` and you'll
+get a report of the tags and that were flipped in the order they were flipped.
+
 
 Sample Output:
 ```
-pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
-Scanning for ~3 seconds...done
-(#)  Tag ID               RSSI   Δ RSSI Previously Run 1532726366 secs ago
-(1)  D446 77E9 62B0          -24      -
-(2)  E175 6F50 EBE2          -25      -
-(3)  F78C DC99 BF71          -48      -
-(4)  D0D7 CA18 963F          -55      -
-(5)  D5BB 5CB3 0C1C          -61      -
-(6)  E294 B4AF 9313          -65      -
-(7)  F991 FBD4 0C78          -74      -
-(8)  C466 3179 CEDF          -79      -
+bin/configurator.rb identify -n 5
+Thanks for playing.
 
-pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
-Scanning for ~3 seconds...done
-(#)  Tag ID               RSSI   Δ RSSI Previously Run 79 secs ago
-(1)  D446 77E9 62B0          -24      0
-(2)  F78C DC99 BF71          -40     -8
-(3)  E294 B4AF 9313          -50    -15
-(4)  F991 FBD4 0C78          -58    -16
-(5)  D0D7 CA18 963F          -62      7
-(6)  D5BB 5CB3 0C1C          -67      6
-(7)  C466 3179 CEDF          -74     -5
+F991 FBD4 0C78	.........................
+E24B 5296 F2B3	............|.............
+EDA9 5A3F 8FE0	.................|......
+F814 D580 FA46	....................|....
+FDD5 7779 1B47	......................|..
+
+Here are the tags you flipped.
+(1) E24B 5296 F2B3
+(2) EDA9 5A3F 8FE0
+(3) F814 D580 FA46
+(4) FDD5 7779 1B47
 ```
+
+You can see from above the first one that was flipped was `E24B`, second was `EDA9` etc.  And `F991` had no flips so it does not show up in the report.
 
 # Appendix
 
