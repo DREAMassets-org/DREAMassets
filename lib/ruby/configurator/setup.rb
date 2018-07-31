@@ -2,7 +2,8 @@
 
 lib_dir = ".."
 require_relative "#{lib_dir}/string.rb"
-require_relative "./ble_scanner.rb"
+require_relative "#{lib_dir}/configurator/ble_scanner.rb"
+require_relative "#{lib_dir}/configurator/configurator_data_file.rb"
 
 module Configurator
   # A couple helper methods to render and format the output table
@@ -30,16 +31,18 @@ module Configurator
   end
 
   class Setup
-    CONFIGURATOR_DATA_DIR = ".configurator".freeze
-    CONFIGURATOR_DATA_FILE = File.join(CONFIGURATOR_DATA_DIR, "configurator.json")
-
     def self.run(options)
+      scan_time = options.scan_time
+
+      if scan_time.to_i <= 0
+        puts "*** You must specify a scan_time that is greater than 0"
+        exit
+      end
+
       previous_rssis = {}
       now = Time.now.to_i
 
       previous_rssis, previously_recorded_at = load_previous_run
-
-      scan_time = options.scan_time
 
       print "Scanning for ~#{scan_time} seconds..."
       # here we add a little extra time to account for the fact that the scanner needs a few seconds to get started
@@ -65,23 +68,11 @@ module Configurator
       # Save the current set of rolled up data in a json file so we can
       # report the changes between the current run and the last time this was run
       def save_current_run(current_run_data)
-        ensure_configurator_directory
-        fp = File.open(CONFIGURATOR_DATA_FILE, "w")
-        fp.write(JSON.generate(current_run_data))
-        fp.close
+        ConfiguratorDataFile.write(current_run_data)
       end
 
       def load_previous_run
-        return [{}, nil] unless File.exist?(CONFIGURATOR_DATA_FILE)
-
-        [
-          JSON.parse(File.open(CONFIGURATOR_DATA_FILE).read),
-          File.ctime(CONFIGURATOR_DATA_FILE).to_i
-        ]
-      end
-
-      def ensure_configurator_directory
-        FileUtils.mkdir_p(CONFIGURATOR_DATA_DIR)
+        ConfiguratorDataFile.read
       end
 
       # Return average RSSI for each tag we see in the measurements

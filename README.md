@@ -44,6 +44,11 @@ For remote usage we should also probably get `screen`
 sudo apt-get install screen -y
 ```
 
+For the configurator machine only, you'll also need the `curses` library
+```
+sudo apt-get libncurses5-dev libncursesw5-dev ruby-dev
+```
+
 Bluez provides the commands `hcitool` and `hcidump` which are the main tools we (probably) will be using to interact with Bluetooth.
 
 To start sniffing, open 2 consoles on the Pi.  In the first console, start up a scanner
@@ -257,6 +262,51 @@ Scanning for ~3 seconds...done
 (6)  D5BB 5CB3 0C1C          -67      6
 (7)  C466 3179 CEDF          -74     -5
 ```
+
+### Identify Mode
+
+To run it:
+```
+bin/configurator.rb identify -n 5
+```
+
+where `n` represents the number of tags you are looking for.  The configurator will pick the closest 5 tags (from the last run
+of setup and sorted by RSSI) and look for only those.
+
+This interactive application will show the activity of each tag that it's watching.  Idle shows a `.`.  When a tag is flipped
+you'll see a `|`.
+
+e.g.
+
+For one tag that has one flip, you might see this:
+
+```
+EDA9 5A3F 8FE0	.................|......
+```
+
+Additional data is reported periodically (about every 2 or 3 seconds).  When you are finished flipping tags, hit `Ctrl+C` and you'll
+get a report of the tags and that were flipped in the order they were flipped.
+
+
+Sample Output:
+```
+bin/configurator.rb identify -n 5
+Thanks for playing.
+
+F991 FBD4 0C78	.........................
+E24B 5296 F2B3	............|.............
+EDA9 5A3F 8FE0	.................|......
+F814 D580 FA46	....................|....
+FDD5 7779 1B47	......................|..
+
+Here are the tags you flipped.
+(1) E24B 5296 F2B3
+(2) EDA9 5A3F 8FE0
+(3) F814 D580 FA46
+(4) FDD5 7779 1B47
+```
+
+You can see from above the first one that was flipped was `E24B`, second was `EDA9` etc.  And `F991` had no flips so it does not show up in the report.
 
 # Appendix
 

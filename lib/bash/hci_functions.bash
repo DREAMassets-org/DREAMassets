@@ -40,8 +40,8 @@ process_and_filter_fujitsu_packets() {
   done
 }
 
-# As explained above, hcidump outputs raw BLE data packets that break across lines. 
-# We use a regex (regular expression) to identify a timestamp that indicates the start of a new trasnmission from a BLE tag 
+# As explained above, hcidump outputs raw BLE data packets that break across lines.
+# We use a regex (regular expression) to identify a timestamp that indicates the start of a new trasnmission from a BLE tag
 TIMESTAMP_REGEX="^([0-9]{4}-[0-9]{2}-[0-9]{2}.*)\s+>(.*)$"
 
 # Read from an input stream that comes from `hcidump -t --raw` and return, for each packet, a string that
@@ -56,13 +56,13 @@ read_blescan_packet_dump() {
   # read a line and look for the starting character ">" or with timestamp like "2018-07-18 10:56:08.151507 >"
   while read line; do
 
-    # check if the `line` contains our `TIMESTAMP_REGEX`, which indicates the start of a new trasnmission from a BLE tag 
-    # we extract values from the `line` and temporarily store them in `tmp_timestamp` and `tmp_packet` 
-    # if the line is not the beginning of a new transmission, then the line is a continuation of the previous line, 
+    # check if the `line` contains our `TIMESTAMP_REGEX`, which indicates the start of a new trasnmission from a BLE tag
+    # we extract values from the `line` and temporarily store them in `tmp_timestamp` and `tmp_packet`
+    # if the line is not the beginning of a new transmission, then the line is a continuation of the previous line,
     #  so add the `line` to the previous `packet` we already started
-    # if the line contains a new transmission, then we output the previous `packet`. 
+    # if the line contains a new transmission, then we output the previous `packet`.
     #  Then start a new packet by setting `packet`=`tmp_packet` and `timestamp`=`tmp_timestamp`
-  
+
     if [[ $line =~ $TIMESTAMP_REGEX ]]; then
       # extract the regex matches immediately
       tmp_timestamp=${BASH_REMATCH[1]}

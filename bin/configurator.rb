@@ -7,56 +7,32 @@
 # It is expected to run on a Raspberry Pi and will listen for BLE devices in the vicinity and report
 # what it finds
 
+# Use the bundler library to get external libraries from the internet
+require "bundler"
 require "ostruct"
 require "optparse"
 require "json"
 require "fileutils"
+require "curses"
 
 # require local ruby helpers and classes
 lib_dir = "../lib/ruby"
 require_relative "#{lib_dir}/configurator/setup.rb"
 require_relative "#{lib_dir}/configurator/identify.rb"
+require_relative "#{lib_dir}/configurator/banner.rb"
 
 # define (and package in a class) the configurator functions
 module Configurator
-
   # This is the main routine for the configurator when you are running in identification mode
   def self.identify(options)
-    Identify.run(options)
+    Identify.new(options).run
   end
 
   # This is the main routine for the configurator when you are running in setup mode
   def self.setup(options)
     Setup.run(options)
   end
-
 end
-
-banner = """
-
- ______   ______    _______  _______  __   __
-|      | |    _ |  |       ||   _   ||  |_|  |
-|  _    ||   | ||  |    ___||  |_|  ||       |
-| | |   ||   |_||_ |   |___ |       ||       |
-| |_|   ||    __  ||    ___||       ||       |
-|       ||   |  | ||   |___ |   _   || ||_|| |
-|______| |___|  |_||_______||__| |__||_|   |_|
- _______  _______  _______  _______  _______  _______
-|   _   ||       ||       ||       ||       ||       |
-|  |_|  ||  _____||  _____||    ___||_     _||  _____|
-|       || |_____ | |_____ |   |___   |   |  | |_____
-|       ||_____  ||_____  ||    ___|  |   |  |_____  |
-|   _   | _____| | _____| ||   |___   |   |   _____| |
-|__| |__||_______||_______||_______|  |___|  |_______|
- _______  _______  __    _  _______  ___   _______  __   __  ______    _______  _______  _______  ______
-|       ||       ||  |  | ||       ||   | |       ||  | |  ||    _ |  |   _   ||       ||       ||    _ |
-|       ||   _   ||   |_| ||    ___||   | |    ___||  | |  ||   | ||  |  |_|  ||_     _||   _   ||   | ||
-|       ||  | |  ||       ||   |___ |   | |   | __ |  |_|  ||   |_||_ |       |  |   |  |  | |  ||   |_||_
-|      _||  |_|  ||  _    ||    ___||   | |   ||  ||       ||    __  ||       |  |   |  |  |_|  ||    __  |
-|     |_ |       || | |   ||   |    |   | |   |_| ||       ||   |  | ||   _   |  |   |  |       ||   |  | |
-|_______||_______||_|  |__||___|    |___| |_______||_______||___|  |_||__| |__|  |___|  |_______||___|  |_|
-
-"""
 
 options_banner = """
 This configurator should be used to identify BLE Fujitu tags near the hub running it.
@@ -74,12 +50,20 @@ options = OpenStruct.new
 parser = OptionParser.new do |opts|
   opts.banner = options_banner
 
-  opts.on("-s", "--scan-time [SECONDS]", "How long to run the scan (in seconds)") do |val|
+  opts.on("-n", "--number-of-tags [NUMBER]", "Top N tags to consider during identification (for identify mode only)") do |val|
+    options.number_of_tags = val.to_i
+  end
+
+  opts.on("-s", "--scan-time [SECONDS]", "How long to run the scan (in seconds) (for setup mode only)") do |val|
     options.scan_time = val.to_i
   end
 
+  opts.on("-D", "--debug", "Debug mode... just scroll the output") do
+    options.debug = true
+  end
+
   opts.on("-h", "--help", "Displays Help") do
-    puts banner
+    puts Banner.new.to_s
     puts opts
     exit
   end

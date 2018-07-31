@@ -3,6 +3,8 @@
 # this module converts data from a binary twos complement into a signed integer
 # this module expects the binary to be 16-bits long, which is what the Fujitsu provides
 # https://www.cs.cornell.edu/~tomf/notes/cps104/twoscomp.html
+require "time"
+
 module TwosComplement
   def convert_to_signed_binary(binary)
     binary_int = binary.to_i(2)
@@ -34,7 +36,6 @@ class Measurement
   def initialize(tag_id:, hex_temperature:, hex_x_acc:, hex_y_acc:, hex_z_acc:, hex_rssi:, hub_id: nil, timestamp: nil)
     # note to selves: for now, we're processing the fujitsu bytes into meaninful values in this script on the Raspberry Pi
     # in the future, it might make sense to do the processing in the cloud
-
     @hub_id = hub_id
 
     # set `timestamp` to the time-formatted time object
