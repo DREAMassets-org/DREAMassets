@@ -103,7 +103,7 @@ def upload_to_all_clients(clients, measurement_bundle, logger)
     logger.info("Sending to #{client.class.name}")
     client.upload(measurement_bundle)
   end
-rescue Exception => ex
+rescue StandardError => ex
   logger.error("Something went wrong : #{ex}")
   logger.debug(ex.backtrace)
 end

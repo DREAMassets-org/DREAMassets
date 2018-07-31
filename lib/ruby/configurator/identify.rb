@@ -113,7 +113,7 @@ module Configurator
             puts
             puts "Here are the tags you flipped."
             @grid.latest_active_tags_in_order.each_with_index do |tag, index|
-              puts "#{format("(%d)", index + 1)} #{tag.as_byte_pairs}"
+              puts "#{format('(%d)', index + 1)} #{tag.as_byte_pairs}"
             end
             exit sig
           end
