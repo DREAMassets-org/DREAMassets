@@ -263,6 +263,43 @@ Scanning for ~3 seconds...done
 (7)  C466 3179 CEDF          -74     -5
 ```
 
+### Identify Mode
+
+To run it:
+```
+bin/configurator setup -s 10
+```
+This will (under the hood) use `bin/tag_scanner.sh` to listen for Fujitsu tags and report back the found tag id's and their
+current RSSI.  On subsequent runs, it will also include in the report, the last time setup was run and the delta in RSSI for
+any tags it may have seen last time and this time.  In the case where the tag was not seen in the previous run, the
+`Δ RSSI` will report `-`.
+
+Sample Output:
+```
+pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
+Scanning for ~3 seconds...done
+(#)  Tag ID               RSSI   Δ RSSI Previously Run 1532726366 secs ago
+(1)  D446 77E9 62B0          -24      -
+(2)  E175 6F50 EBE2          -25      -
+(3)  F78C DC99 BF71          -48      -
+(4)  D0D7 CA18 963F          -55      -
+(5)  D5BB 5CB3 0C1C          -61      -
+(6)  E294 B4AF 9313          -65      -
+(7)  F991 FBD4 0C78          -74      -
+(8)  C466 3179 CEDF          -79      -
+
+pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
+Scanning for ~3 seconds...done
+(#)  Tag ID               RSSI   Δ RSSI Previously Run 79 secs ago
+(1)  D446 77E9 62B0          -24      0
+(2)  F78C DC99 BF71          -40     -8
+(3)  E294 B4AF 9313          -50    -15
+(4)  F991 FBD4 0C78          -58    -16
+(5)  D0D7 CA18 963F          -62      7
+(6)  D5BB 5CB3 0C1C          -67      6
+(7)  C466 3179 CEDF          -74     -5
+```
+
 # Appendix
 
 ## Code Organization

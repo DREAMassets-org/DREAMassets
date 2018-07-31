@@ -111,8 +111,10 @@ module Configurator
             Curses.close_screen
             puts "Thanks for playing."
             puts
-            puts "Here's a list of tags in order of their last flips - the last one was flipped most recently."
-            @grid.latest_active_tags_in_order.each { |tag| puts tag }
+            puts "Here are the tags you flipped."
+            @grid.latest_active_tags_in_order.each_with_index do |tag, index|
+              puts "#{format("(%d)", index + 1)} #{tag.as_byte_pairs}"
+            end
             exit sig
           end
         end
