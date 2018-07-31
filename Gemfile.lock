@@ -64,9 +64,10 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  byebug
   curses
   google-cloud-storage
   rake
 
 BUNDLED WITH
-   1.15.4
+   1.16.3

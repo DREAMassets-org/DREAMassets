@@ -4,7 +4,7 @@ require_relative "#{lib_dir}/packet_decoder.rb"
 
 module Configurator
   class BLEScanner
-    def self.run(seconds = 2)
+    def self.run(seconds = 5)
       input_payloads = []
 
       # collect some packets
@@ -14,7 +14,7 @@ module Configurator
           # check that there's data in packet_data and that it matches the Fujitsu Regex, since we'll get lots of irrelevant BLE packets
           begin
             input_payloads << JSON.parse(line)
-          rescue JSON::ParserError => ex
+          rescue JSON::ParserError
             # skip packets we can't decode
           end
           break if Time.now.to_i >= end_time
