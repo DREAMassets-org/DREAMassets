@@ -49,6 +49,113 @@ For the configurator machine only, you'll also need the `curses` library
 sudo apt-get install libncurses5-dev libncursesw5-dev ruby-dev -y
 ```
 
+### Soracom Setup
+
+If you're planning to hook up to Soracom, you'll need a few more bits.
+
+Make sure you have the latest `network-manager` software
+
+```
+sudo apt-get update && sudo apt-get install network-manager
+
+```
+
+Setup an APN (Access Point Name) for the SORACOM SIM to connect to the SORACOM mobile network
+
+```
+sudo nmcli con add type gsm ifname "*" con-name soracom apn soracom.io user sora password sora
+```
+
+This should give you a response like `Connection 'soracom' (3cbecb73-2f6c-48f9-819a-3e233408d4a0) successfully added.`
+
+Restart your Pi
+
+```
+sudo shutdown -r now
+```
+
+Plugin the SORACOM USB dongle.
+
+SSH back into the Pi.
+
+Once the light on the SORACOM goes blue, you should see `ppp0` in your `ifconfig` output.
+
+```
+$ ifconfig
+eth0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        ether b8:27:eb:66:1e:ca  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1  (Local Loopback)
+        RX packets 4  bytes 156 (156.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 4  bytes 156 (156.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+ppp0: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1500
+        inet 10.146.106.124  netmask 255.255.255.255  destination 0.0.0.0
+        ppp  txqueuelen 3  (Point-to-Point Protocol)
+        RX packets 254  bytes 58898 (57.5 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 264  bytes 33553 (32.7 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.4.8.68  netmask 255.255.0.0  broadcast 10.4.255.255
+        inet6 fe80::e0f6:75a0:5734:b6aa  prefixlen 64  scopeid 0x20<link>
+        ether ba:0e:ee:34:f8:e6  txqueuelen 1000  (Ethernet)
+        RX packets 5527  bytes 357676 (349.2 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 4437  bytes 847429 (827.5 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+We want the `ppp0` (which is the cell networking interface) to be our default.  We can acheive this by grabbing a helper script from SORACOM and running it.
+
+```
+# grab the ppp_route_metric script
+sudo curl -o /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric https://soracom-files.s3.amazonaws.com/handson/90.set_ppp_route_metric
+# Put it in the set of network startup scripts on the Pi
+sudo chmod +x /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric
+# run it
+sudo /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric ppp0 up
+```
+
+This step will also set things up so that when the machine starts up again, it will prefer the cell network over the wifi.
+
+To confirm, check that the `ppp0` is listed first in your routing table.
+
+```
+route -n
+
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         0.0.0.0         0.0.0.0         U     700    0        0 ppp0
+10.4.0.0        0.0.0.0         255.255.0.0     U     303    0        0 wlan0
+```
+
+At this point you should be on the network via SORACOM.  You can also check using `traceroute`.  The first hop for SORACOM (during
+our testing phase) was an Amazon system.  Notice the high latency... more proof that you're on a cell network.
+
+```
+traceroute www.whatsmyip.com
+
+traceroute to www.whatsmyip.com (104.25.36.116), 30 hops max, 60 byte packets
+ 1  ec2-54-93-0-44.eu-central-1.compute.amazonaws.com (54.93.0.44)  858.717 ms  898.895 ms ec2-54-93-0-42.eu-central-1.compute.amazonaws.com (54.93.0.42)  838.623 ms
+ 2  100.66.0.214 (100.66.0.214)  918.328 ms 100.66.0.218 (100.66.0.218)  958.384 ms 100.66.0.210 (100.66.0.210)  1028.293 ms
+ 3  100.66.0.107 (100.66.0.107)  1058.564 ms 100.66.0.41 (100.66.0.41)
+
+ ...
+```
+
+### Bluez and Bluetooth libraries
+
 Bluez provides the commands `hcitool` and `hcidump` which are the main tools we (probably) will be using to interact with Bluetooth.
 
 To start sniffing, open 2 consoles on the Pi.  In the first console, start up a scanner
