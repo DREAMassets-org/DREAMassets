@@ -291,6 +291,67 @@ So for July 31, 2018 (which is in the 31'st week of the year) the csv's would be
 
 `your-bucket-name/your-directory-name/2018/07/31/<hub id-timestamp>.csv`
 
+## Google Big Query as a way to get data from Google Cloud Storage
+
+First, give your project permission to use BigQuery by enabling that API.
+
+1. Visit this page https://cloud.google.com/bigquery/docs/quickstarts/quickstart-web-ui and click "Enable the API".
+1. Choose your project from the dropdown.
+1. Press Continue
+1. Click on "Credentials"
+1. Answer "No, I'm not using them" to the question "Are you planning to use this API with App Engine or Compute Engine?"
+1. Click on "What credentials do I need?"
+1. Create a new service account (I called mine 'dream-assets-big-query-api')
+1. Create a service account key
+1. Choose "JSON" format
+1. This will download the credential files through your brower.  That downloaded json file (named something like <username>-<hex key>.json should be copied to the hub.  The file name on the hub should match whatever path is specified in your GOOGLE_CREDENTIALS_JSON_FILE .
+
+At this point, you should be able to get to BigQuery
+
+Go to your Google Cloud console dashboard.  Click on "BigQuery" in the left side navigation panel.
+
+We are going to add a dataset and a table to Big Query that points to our bucket of CSVs.
+
+1. Click on your project on the left sidebar
+1. Click on "Create Dataset"
+1. Choose a dataset name (like `dream_assets_dataset`)
+1. Click "Create dataset"
+1. You should (in a few seconds) get a success message that says something like "Dataset was created"
+1. Click on your project name again.  It should expand and show you the new data set.
+1. Click on that dataset.
+1. Click on "Create table"
+1. Choose "GoogleCloudStorage" from "Create table from:" and point it to your bucket by setting the "Select File From GSC Bucket" to something like `gs://my-dream-assets-project/my-dream-assets-bucket/measurements/*.csv`.  You can alternatively, use the file browser to pick out 1 csv from your bucket, then replace the csv filename with `*.csv`.
+1. Set the file format to `CSV`
+1. Set a table name in the "Destination Table" like `measurements_table`
+1. Under schema, choose "Edit as text" and insert the following for the schema
+```
+hub_id:STRING,tag_id:STRING,temperature:FLOAT,x_accel:FLOAT,y_accel:FLOAT,z_accel:FLOAT,rssi:INTEGER,timestamp:INTEGER
+```
+1. You should, in a few seconds, get a success message that says the table was created.
+1. Click on the table and in the query editor, try test query like
+```
+select count(*) from dream_assets_dataset.measurements_table;
+```
+1. Click on Run Query
+1. Your result should be the number of rows of data you have sitting in that bucket.
+1. Try a more informative query like the following (you should update hub id, tag id, and timestamps to values for which you expect a match)
+```
+SELECT
+  DATETIME(PARSE_TIMESTAMP("%s", cast(measurements.timestamp as string)), "America/Los_Angeles") as ts_datetime,
+  measurements.*
+FROM
+  dream_assets_dataset.measurements_table measurements,
+where
+  measurements.timestamp > 1532538000 # 10am July 25 2018 PST
+  and measurements.timestamp < 1532545200 # 12am July 25 2018 PST
+  and measurements.tag_id='<tag id>'
+  and measurements.hub_id='<hub id>'
+order by timestamp desc
+```
+
+1. If you got results, you are on your way.
+1. You can click "Save As" to export the data you just queried to a CSV.  This download will truncate the data at 16000 rows.
+
 ## Required environment variables on the Hub
 
 
