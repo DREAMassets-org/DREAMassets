@@ -294,6 +294,12 @@ bin/tag_scanner.sh | bin/packet_parser.rb
 
 ```
 
+Files are stored under your bucket and directory with an additional split across year/month/week where week is the numeric week of the year. 
+
+So for July 31, 2018 (which is in the 31'st week of the year) the csv's would be stored under
+
+`your-bucket-name/your-directory-name/2018/07/31/<hub id-timestamp>.csv`
+
 ## Required environment variables on the Hub
 
 
