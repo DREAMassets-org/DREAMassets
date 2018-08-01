@@ -327,6 +327,8 @@ We are going to add a dataset and a table to Big Query that points to our bucket
 ```
 hub_id:STRING,tag_id:STRING,temperature:FLOAT,x_accel:FLOAT,y_accel:FLOAT,z_accel:FLOAT,rssi:INTEGER,timestamp:INTEGER
 ```
+1. Under Advanced Options, choose "Overwrite table" under "Write Preference"
+1. click "Create table"
 1. You should, in a few seconds, get a success message that says the table was created.
 1. Click on the table and in the query editor, try test query like
 ```
