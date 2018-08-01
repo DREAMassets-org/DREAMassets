@@ -13,7 +13,7 @@ class GoogleCloudStorageService
     @project_credentials_json_file = credentials_file
     @hub_id = hub_id
     @bucket_name = bucket_name
-    @directory = directory
+    @base_directory = directory
   end
 
   # Given an array of Measurement objects, serialize them as CSVs and send them to GoogleCloudStorage in a file called "<hub id>-<timestamp>.csv"
@@ -28,12 +28,17 @@ class GoogleCloudStorageService
 
   def generate_filename
     filename = sprintf("%s-%f.csv", @hub_id, Time.now.to_f)
-    [@directory, filename].compact.join("/")
+    [directory, filename].compact.join("/")
   end
 
   def format_measurements(measurements)
     # return the data as a String that is in CSV format
     measurements.map(&:csv_row).join("\n")
+  end
+
+  def directory
+    now = Time.now
+    File.join(@base_directory, now.strftime("%Y/%m/%W"))
   end
 
   def bucket
