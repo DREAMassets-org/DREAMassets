@@ -35,7 +35,7 @@ module Configurator
       scan_time = options.scan_time
 
       if scan_time.to_i <= 0
-        puts "*** You must specify a scan_time that is greater than 0"
+        puts "*** You must specify a scan_time greater than 0"
         exit
       end
 
@@ -52,7 +52,9 @@ module Configurator
       average_rssis = average_rssi_by_tag_id(measurements)
       age = now - previously_recorded_at.to_i
 
-      puts Table.format_header(["(#)", "Tag ID", "RSSI", "Δ RSSI", "Previously Run #{age} secs ago"])
+      puts "----"
+      puts "The last time you ran Configurator Setup was #{age} seconds ago"
+      puts Table.format_header(["(#)", "Tag ID", "  RSSI", " Δ RSSI"])
       average_rssis.sort_by { |_tag_id, rssi| -rssi }.each_with_index do |(tag_id, rssi), index|
         previous_rssi = previous_rssis[tag_id]
 
