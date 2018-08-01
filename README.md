@@ -337,7 +337,7 @@ on a dedicated Raspberry Pi.
 
 To run it:
 ```
-bin/configurator setup -s 10
+bin/configurator.rb setup -s 10
 ```
 This will (under the hood) use `bin/tag_scanner.sh` to listen for Fujitsu tags and report back the found tag id's and their
 current RSSI.  On subsequent runs, it will also include in the report, the last time setup was run and the delta in RSSI for
@@ -346,7 +346,8 @@ any tags it may have seen last time and this time.  In the case where the tag wa
 
 Sample Output:
 ```
-pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
+$ bin/configurator.rb setup -s 3
+
 Scanning for ~3 seconds...done
 (#)  Tag ID               RSSI   Δ RSSI Previously Run 1532726366 secs ago
 (1)  D446 77E9 62B0          -24      -
@@ -358,7 +359,8 @@ Scanning for ~3 seconds...done
 (7)  F991 FBD4 0C78          -74      -
 (8)  C466 3179 CEDF          -79      -
 
-pi@sueno:~/ble_sniffing $ bin/configurator.rb setup -s 3
+$ bin/configurator.rb setup -s 3
+
 Scanning for ~3 seconds...done
 (#)  Tag ID               RSSI   Δ RSSI Previously Run 79 secs ago
 (1)  D446 77E9 62B0          -24      0
