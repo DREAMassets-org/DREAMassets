@@ -64,7 +64,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  byebug
   curses
   google-cloud-storage
   rake

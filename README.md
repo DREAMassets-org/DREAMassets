@@ -199,22 +199,13 @@ Of course, raw data spewing into your terminal isn't especially useful, so now l
 
 ## Pulling the github repo to the Raspberry Pi
 
-First you need to setup some ssh keys so that Github will be happy with your connection.  On your Pi
+Clone the repository like so
 
 ```
-ssh-keygen
+git clone https://github.com/DREAMassets/DREAMassets.git
 ```
 
-It will ask for a filename/directory to save this key.  Leave it as default.
-It will also ask for a passphrase.  I've been using the same as the `pi` user's password.
-
-Once that is setup you can clone the repository like so
-
-```
-git clone https://github.com/DREAMassets/ble_sniffing.git
-```
-
-At this point you'll have a directory called `ble_sniffing` with the contents of the github repo.  Follow
+At this point you'll have a directory called `DREAMassets` with the contents of the github repo.  Follow
 the instructions below on using the scanner and parser scripts.
 
 ## Scanner
@@ -294,7 +285,7 @@ bin/tag_scanner.sh | bin/packet_parser.rb
 
 ```
 
-Files are stored under your bucket and directory with an additional split across year/month/week where week is the numeric week of the year. 
+Files are stored under your bucket and directory with an additional split across year/month/week where week is the numeric week of the year.
 
 So for July 31, 2018 (which is in the 31'st week of the year) the csv's would be stored under
 

@@ -1,7 +1,6 @@
 require "json"
 require "io/console"
 require "curses"
-require "byebug"
 
 lib_dir = ".."
 require_relative "#{lib_dir}/measurement.rb"
@@ -42,8 +41,8 @@ module Configurator
 
         @grid.tags.each_with_index do |tag, index|
           tag_activity = @grid.flipped(tag).join("")
-          trimmed_deriv = tag_activity[-WINDOW_SIZE..-1] || tag_activity
-          render_row([tag, trimmed_deriv].join("\t"), index + 1)
+          trimmed_activity = tag_activity[-WINDOW_SIZE..-1] || tag_activity
+          render_row([tag.as_byte_pairs, trimmed_activity].join("\t"), index + 1)
         end
 
         render_info_rows(@tags_to_watch.count + 2)
@@ -110,6 +109,12 @@ module Configurator
           trap(i) do |sig|
             Curses.close_screen
             puts "Thanks for playing."
+            puts
+            @grid.tags.each_with_index do |tag, index|
+              tag_activity = @grid.flipped(tag).join("")
+              trimmed_activity = tag_activity[-WINDOW_SIZE..-1] || tag_activity
+              puts [tag.as_byte_pairs, trimmed_activity].join("\t")
+            end
             puts
             puts "Here are the tags you flipped."
             @grid.latest_active_tags_in_order.each_with_index do |tag, index|
