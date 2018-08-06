@@ -3,7 +3,8 @@ env.sh
 *~
 logs/*
 googledata/
-
+secrets/environment.py
+secrets/credentials.json
 # vi/emacs temp files
 \#*
 \*~
