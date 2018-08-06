@@ -4,7 +4,7 @@ import io
 import json
 
 class GoogleCloudStorage:
-  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory):
+  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger):
     self.project_id = project_id
     self.credentials_file = credentials_file
     self.hub_id = hub_id
@@ -14,8 +14,10 @@ class GoogleCloudStorage:
     self.suffix = None
     self.content_type = None
     self.mime_type = None
+    self.logger = logger
 
   def upload(self, measurements):
+    self.logger and self.logger.debug("Uploading %d measurements", len(measurements))
     if len(measurements) <= 0:
       return
     blob = storage.blob.Blob(self._generate_filename(), self._bucket())
@@ -37,8 +39,8 @@ class GoogleCloudCSVStorage(GoogleCloudStorage):
 
   HEADERS = ['hub_id', 'tag_id','temperature', 'x_acc', 'y_acc', 'z_acc',  'rssi', 'timestamp']
 
-  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory):
-    GoogleCloudStorage.__init__(self,project_id, credentials_file, hub_id, bucket_name, directory)
+  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger):
+    GoogleCloudStorage.__init__(self,project_id, credentials_file, hub_id, bucket_name, directory, logger)
     self.suffix = "csv"
     self.mime_type = "text/csv"
     self.content_type = "text/csv"
@@ -62,13 +64,15 @@ class GoogleCloudCSVStorage(GoogleCloudStorage):
     return GoogleCloudStorage._generate_filename(self) + ".csv"
 
 class GoogleCsvUploader():
-  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory):
+  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger):
     self.project_id = project_id
     self.credentials_file = credentials_file
     self.hub_id = hub_id
     self.bucket_name = bucket_name
     self.base_directory = directory or ''
+    self.logger = logger
 
   def package_and_upload(self, measurements):
-    gcs = GoogleCloudCSVStorage(self.project_id, self.credentials_file, self.hub_id, self.bucket_name, self.base_directory)
+    self.logger and self.logger.info("Writing %d measurements to %s" % ( len(measurements), self.bucket_name ))
+    gcs = GoogleCloudCSVStorage(self.project_id, self.credentials_file, self.hub_id, self.bucket_name, self.base_directory, self.logger)
     gcs.upload(measurements)
