@@ -82,6 +82,11 @@ def main():
 
     from bluepy import btle
 
+    if arg.verbose:
+        print("Environment:")
+        print(repr(env))
+        print
+
     uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'])
     processor = FujitsuPacketProcessor(arg, uploader)
     fujitsu_listener = ScanFujitsu(arg, processor)

@@ -46,10 +46,14 @@ def main():
                         help='Increase output verbosity')
     arg = parser.parse_args(sys.argv[1:])
 
+    if arg.verbose:
+        print("Environment:")
+        print(repr(env))
+        print
+
     print (ANSI_RED + "Reading Fujitsu Packets from file..." + ANSI_OFF)
 
     fp = None
-
     uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'])
     processor = FujitsuPacketProcessor(arg, uploader)
 
