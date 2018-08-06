@@ -208,7 +208,61 @@ git clone https://github.com/DREAMassets/DREAMassets.git
 At this point you'll have a directory called `DREAMassets` with the contents of the github repo.  Follow
 the instructions below on using the scanner and parser scripts.
 
-## Scanner
+## Python Scanner/Uploader
+
+To get your machine ready for scanning:
+```
+# grab glib2.0 library for python native library building
+
+sudo apt-get install libglib2.0-dev -y
+
+# install python libraries for Google Cloud and BLE hookup
+sudo pip install google-cloud-storage
+sudo pip install bluepy
+```
+
+With this all installed, you need to put your secret information (Google Credentials and bucket information) in
+the `./secrets/environment.py`. You can start with `secrets/environment.example.py` as a template.
+Copy that file to `./secrets/environment.py` and update the values inside the file to match your setup.  It should
+look something like :
+
+```
+SECRETS = {
+    'GOOGLE_PROJECT_ID': 'my-google-project-id',
+    'GOOGLE_BUCKET': 'my-google-bucket',
+    'GOOGLE_DIRECTORY': 'my-google-bucket-directory',
+    'GOOGLE_CREDENTIALS_JSON_FILE': './secrets/my-google-credentials.json'
+}
+```
+
+Copy your Google json credentials file onto the hub under the secrets directory and update the `GOOGLE_CREDENTIALS_JSON_FILE` entry
+above to point to that file.
+
+
+Now you should be able to start scanning and collecting...
+
+Run for 10 seconds (`-t 10`) and send every 10 measurements to Google Cloud (`-b 20`)
+```
+sudo bin/dream_collector.py -t 10 -b 20
+```
+
+Run forever and send every 1500 measurements to Google Cloud (`-b 1500`)
+```
+sudo bin/dream_collector.py -b 1500
+```
+
+Print measurements to the console as they are collected (`-v`)
+```
+sudo bin/dream_collector.py -v -b 100 -t 10
+```
+
+Show the help message
+```
+sudo bin/dream_collector.py -h
+```
+
+
+## Bash Scanner
 
 A small bash script can be used to sniff/scan BLE packets that match our desired packets from the Fujitsu tags.
 
@@ -233,7 +287,7 @@ bin/tag_scanner.sh > sniffed_packets.txt
 
 Logic to unpack that is in the parser.
 
-## Parser
+## Ruby Parser
 
 Using a short ruby script, you can parse the data from the scanner.
 
