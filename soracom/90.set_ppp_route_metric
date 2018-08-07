@@ -1,0 +1,29 @@
+#!/bin/bash
+
+IF=$1
+STATUS=$2
+PPP0_ROUTE=`/sbin/route -n | grep ppp0`
+
+if [ "$IF" == "ppp0" ]
+then
+    case "$2" in
+        up)
+                if [ -z ${PPP0_ROUTE} ]; then
+                  /sbin/route add -net default dev ppp0 metric 0
+                  logger -s "Adding ppp0 default route with metric 0"
+                else
+                  /sbin/route del default
+                  /sbin/route add -net default dev ppp0 metric 0
+                  logger -s "Updated ppp0 default route with metric 0"
+                fi
+        ;;
+        down)
+                /sbin/route del default dev ppp0
+                logger -s "Deleted ppp0 default route"
+                ;;
+        *)
+        ;;
+    esac
+else
+    logger -s "Left routes unchanged as this script is strictly for dev=ppp0"
+fi

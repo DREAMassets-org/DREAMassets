@@ -119,9 +119,9 @@ wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 We want the `ppp0` (which is the cell networking interface) to be our default.  We can acheive this by grabbing a helper script from SORACOM and running it.
 
 ```
-# grab the ppp_route_metric script
-sudo curl -o /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric https://soracom-files.s3.amazonaws.com/handson/90.set_ppp_route_metric
-# Put it in the set of network startup scripts on the Pi
+# Copy the ppp_route_metric script from the repo to the system startup directory
+sudo cp soracom/90.set_ppp_route_metric /etc/NetworkManager/dispatcher.d/
+# Make it executable
 sudo chmod +x /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric
 # run it
 sudo /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric ppp0 up
