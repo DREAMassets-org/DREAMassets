@@ -261,6 +261,13 @@ Show the help message
 sudo bin/dream_collector.py -h
 ```
 
+Update the log level
+```
+sudo bin/dream_collector.py -l INFO
+```
+
+Logs will be written to `logs/dream_assets.log`
+
 
 ## Bash Scanner
 

@@ -14,8 +14,9 @@ from bluepy import btle
 import sys
 sys.path.insert(0, 'lib/python')
 
-from google_cloud_storage import GoogleCsvUploader
+from google_cloud import GoogleCsvUploader
 from fujitsu_packet_processor import FujitsuPacketProcessor
+from logger import DreamAssetsLogger
 import packet_decoder
 import dream_environment
 
@@ -76,24 +77,38 @@ def main():
                         help='dBm value for filtering far devices')
     parser.add_argument('-b', '--bundle-size', type=int,
                         help='Number of measurements to send in each bundle', default=100)
+    parser.add_argument('-L', '--log-file-name', action="store", help="Specify the log file name", default="logs/dream_tester.log")
+    parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
     arg = parser.parse_args(sys.argv[1:])
 
     from bluepy import btle
 
+    logger = DreamAssetsLogger(arg.log_level).get()
+
+    logger.info("Running with args: %s" % arg)
+    logger.info("Current Environment: %s" % env)
+
     if arg.verbose:
+        print("Command-line arguments:")
+        print(repr(arg))
+        print
         print("Environment:")
         print(repr(env))
         print
 
-    uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'])
-    processor = FujitsuPacketProcessor(arg, uploader)
+    uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'], logger)
+    processor = FujitsuPacketProcessor(arg, uploader, logger)
     fujitsu_listener = ScanFujitsu(arg, processor)
     scanner = btle.Scanner(arg.hci).withDelegate(fujitsu_listener)
 
+    logger.info("Start scanning")
     print (ANSI_RED + "Scanning for Fujitsu Packets..." + ANSI_OFF)
     _devices = scanner.scan(arg.timeout)
+    logger.info("Flush remaining packets")
+    processor.flush()
+    logger.info("Done scanning")
 
 
 if __name__ == "__main__":
