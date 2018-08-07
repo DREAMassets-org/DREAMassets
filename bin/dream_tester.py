@@ -2,37 +2,18 @@
 
 from __future__ import print_function
 import argparse
-import os
-import imp
 import sys
 import json
 
-import sys
 sys.path.insert(0, 'lib/python')
 
 from google_cloud import GoogleCsvUploader
 from fujitsu_packet_processor import FujitsuPacketProcessor
 from logger import DreamAssetsLogger
-import packet_decoder
 import dream_environment
 
 env = dream_environment.fetch()
 
-if os.getenv('C', '1') == '0':
-    ANSI_RED = ''
-    ANSI_GREEN = ''
-    ANSI_YELLOW = ''
-    ANSI_CYAN = ''
-    ANSI_WHITE = ''
-    ANSI_OFF = ''
-else:
-    ANSI_CSI = "\033["
-    ANSI_RED = ANSI_CSI + '31m'
-    ANSI_GREEN = ANSI_CSI + '32m'
-    ANSI_YELLOW = ANSI_CSI + '33m'
-    ANSI_CYAN = ANSI_CSI + '36m'
-    ANSI_WHITE = ANSI_CSI + '37m'
-    ANSI_OFF = ANSI_CSI + '0m'
 
 def main():
     parser = argparse.ArgumentParser()
@@ -59,11 +40,10 @@ def main():
         print
 
     logger.info("Start reading packets")
-    print (ANSI_RED + "Reading Fujitsu Packets from file..." + ANSI_OFF)
+    print("Reading Fujitsu Packets from file...")
 
-    fp = None
     uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'], logger)
-    processor = FujitsuPacketProcessor(arg, uploader)
+    processor = FujitsuPacketProcessor(arg, uploader, logger)
 
     for line in arg.file:
         try:
@@ -76,6 +56,7 @@ def main():
 
     processor.flush()
     logger.info("Done")
+
 
 if __name__ == "__main__":
     main()

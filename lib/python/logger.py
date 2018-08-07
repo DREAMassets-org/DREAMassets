@@ -1,12 +1,13 @@
 import os
 import logging
 
+
 class Logger(object):
 
     LOGGING_DIR = "./logs"
 
-    def __init__(self, name, level = None):
-        name = name.replace('.log','')
+    def __init__(self, name, level=None):
+        name = name.replace('.log', '')
         logger = logging.getLogger('dream_assets.%s' % name)
         logger.setLevel(level)
         if not logger.handlers:
@@ -23,7 +24,7 @@ class Logger(object):
 
 
 class DreamAssetsLogger(Logger):
-    def __init__(self, level = None):
+    def __init__(self, level=None):
         log_level = {
             'DEBUG': logging.DEBUG,
             'INFO': logging.INFO,

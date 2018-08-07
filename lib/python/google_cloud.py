@@ -1,7 +1,6 @@
 from google.cloud import storage
 import time
-import io
-import json
+
 
 class GoogleCloudStorage:
   def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger):
@@ -29,18 +28,19 @@ class GoogleCloudStorage:
     return self.client
 
   def _generate_filename(self):
-    filename = "%s-%f" % ( self.hub_id, time.time() )
+    filename = "%s-%f" % (self.hub_id, time.time())
     return "/".join([self.base_directory, time.strftime("%Y/%m/%d"), filename])
 
   def _bucket(self):
     return self._client().get_bucket(self.bucket_name)
 
+
 class GoogleCloudCSVStorage(GoogleCloudStorage):
 
-  HEADERS = ['hub_id', 'tag_id','temperature', 'x_acc', 'y_acc', 'z_acc',  'rssi', 'timestamp']
+  HEADERS = ['hub_id', 'tag_id', 'temperature', 'x_acc', 'y_acc', 'z_acc',  'rssi', 'timestamp']
 
   def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger):
-    GoogleCloudStorage.__init__(self,project_id, credentials_file, hub_id, bucket_name, directory, logger)
+    GoogleCloudStorage.__init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger)
     self.suffix = "csv"
     self.mime_type = "text/csv"
     self.content_type = "text/csv"
@@ -63,6 +63,7 @@ class GoogleCloudCSVStorage(GoogleCloudStorage):
   def _generate_filename(self):
     return GoogleCloudStorage._generate_filename(self) + ".csv"
 
+
 class GoogleCsvUploader():
   def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, logger):
     self.project_id = project_id
@@ -73,6 +74,6 @@ class GoogleCsvUploader():
     self.logger = logger
 
   def package_and_upload(self, measurements):
-    self.logger and self.logger.info("Writing %d measurements to %s" % ( len(measurements), self.bucket_name ))
+    self.logger and self.logger.info("Writing %d measurements to %s" % (len(measurements), self.bucket_name))
     gcs = GoogleCloudCSVStorage(self.project_id, self.credentials_file, self.hub_id, self.bucket_name, self.base_directory, self.logger)
     gcs.upload(measurements)
