@@ -14,13 +14,12 @@ class GoogleCloudStorage:
     self.content_type = None
     self.mime_type = None
     self.logger = logger
-
-  def upload(self, measurements):
-    self.logger and self.logger.debug("Uploading %d measurements", len(measurements))
-    if len(measurements) <= 0:
+  def upload(self, bundle):
+    if len(bundle) <= 0:
       return
+    self.logger and self.logger.debug("Uploading a bundle of %d measurements", len(bundle))
     blob = storage.blob.Blob(self._generate_filename(), self._bucket())
-    blob.upload_from_string(self._format_measurements(measurements), self.mime_type)
+    blob.upload_from_string(self._format_measurements(bundle), self.mime_type)
 
   def _client(self):
     if not self.client:
@@ -74,6 +73,6 @@ class GoogleCsvUploader():
     self.logger = logger
 
   def package_and_upload(self, measurements):
-    self.logger and self.logger.info("Writing %d measurements to %s" % (len(measurements), self.bucket_name))
+    self.logger and self.logger.info("Uploading %d measurements to the %s bucket" % (len(measurements), self.bucket_name))
     gcs = GoogleCloudCSVStorage(self.project_id, self.credentials_file, self.hub_id, self.bucket_name, self.base_directory, self.logger)
     gcs.upload(measurements)
