@@ -101,6 +101,7 @@ def main():
                         help='dBm value for filtering far devices')
     parser.add_argument('-b', '--bundle-size', type=int,
                         help='Number of measurements to send in each bundle', default=100)
+    parser.add_argument('-S', '--scan-only', action='store_true', help="Scan only.  Don't upload any data.  Should be used with -v option")
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
@@ -120,6 +121,8 @@ def main():
         print
 
     uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'], logger)
+    if arg.scan_only:
+        uploader = None
     processor = FujitsuPacketProcessor(arg, uploader, logger)
     fujitsu_listener = ScanFujitsu(arg, processor)
     scanner = btle.Scanner(arg.hci).withDelegate(fujitsu_listener)
