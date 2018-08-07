@@ -58,7 +58,6 @@ def main():
                         help='dBm value for filtering far devices')
     parser.add_argument('-b', '--bundle-size', type=int,
                         help='Number of measurements to send in each bundle', default=100)
-    parser.add_argument('-L', '--log-file-name', action="store", help="Specify the log file name", default="logs/dream_tester.log")
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
