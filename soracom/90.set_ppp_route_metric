@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Originally from https://soracom-files.s3.amazonaws.com/handson/90.set_ppp_route_metric
+# The original script had some issues with the way it was trying to find the default
+# routes and destinations. 
+# This modified version is more error-resistant and was built with help from Soracom 
+
 IF=$1
 STATUS=$2
 PPP0_ROUTE=`/sbin/route -n | grep ppp0`
