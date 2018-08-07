@@ -82,7 +82,7 @@ class ScanFujitsu(btle.DefaultDelegate):
             if self.opts.verbose:
                 print (json.dumps(measurement))
 
-    def extract_packet_payload(self, packet)
+    def extract_packet_payload(self, packet):
         # extract all packet data
         scan_data_hash = {}
         for (sdid, desc, val) in dev.getScanData():
