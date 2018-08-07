@@ -1,10 +1,14 @@
-env.sh
-.byebug_history
-*~
+# general stuff
 logs/*
-googledata/
+
+# secrets
+env.sh
 secrets/environment.py
 secrets/credentials.json
+
+# python compiled files
+*.pyc
+
 # vi/emacs temp files
 \#*
 \*~
