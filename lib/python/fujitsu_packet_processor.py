@@ -24,5 +24,5 @@ class FujitsuPacketProcessor():
 
     def upload_and_reset(self):
         if (len(self.bundle) > 0):
-            self.uploader.package_and_upload(self.bundle)
+            self.uploader and self.uploader.package_and_upload(self.bundle)
             self.bundle = []
