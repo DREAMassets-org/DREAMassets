@@ -67,7 +67,7 @@ class ScanFujitsu(btle.DefaultDelegate):
         # the math that bluepy does to compute that number.  When we get it from bluepy, it is
         # in dBm's
         
-        packet_payload = extract_packet_payload(packet)
+        packet_payload = self.extract_packet_payload(packet)
         # if the packet matches a fujitsu packet
         if re.search(self.fujitsu_packet_regex, packet_payload):
             measurement = {
