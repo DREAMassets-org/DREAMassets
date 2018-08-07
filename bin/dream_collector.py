@@ -85,7 +85,7 @@ class ScanFujitsu(btle.DefaultDelegate):
     def extract_packet_payload(self, packet):
         # extract all packet data
         scan_data_hash = {}
-        for (sdid, desc, val) in dev.getScanData():
+        for (sdid, desc, val) in packet.getScanData():
             scan_data_hash[desc] = val
         # return only the "Manufacturer" setting which is the data that 
         # includes temp/acceleration (assuming it's a Fujitsu packet)
