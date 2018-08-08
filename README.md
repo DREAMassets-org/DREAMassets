@@ -418,36 +418,61 @@ order by timestamp desc
 ## Required environment variables on the Hub
 
 
-## Deployment on Raspberry PIs
-
 Typical deployment, once the PI is setup, should go as follows
 
-1. login to the pi
+*. login to the pi
 ```
 ssh pi@the_pi_name
 ```
 
-1. connect to the remote screen (if it exists)
-```
-# try
-screen -r
-# if it says there is no screen to connect to then
-screen
-```
-
-1. If the PI is collecting data, connecting to the screen should show you some data.  You can use Ctrl+C to kill that process and exit the screen
-1. Update the code ( `cd ble_sniffing/; git pull` )
-1. restart the collection process
+* check to see if the scanner is already running here
 
 ```
-source env.sh && bin/tag_scanner.sh | bin/packet_parser.rb
+ps -ef | grep python
 ```
 
-1. exit from the screen with Ctrl+A Ctrl+D
-1. logout of the PI
+If it is running, you should see something like
+```
+ps -ef | grep python
+root      6066  6062 24 17:56 pts/0    00:00:01 python ./bin/dream_collector.py -S
+root      6067  6066  0 17:56 pts/0    00:00:00 /usr/local/lib/python2.7/dist-packages/bluepy/bluepy-helper 0
+pi        6071  6039  0 17:56 pts/0    00:00:00 grep --color=auto pyth
+```
+the first numeric column is the PID for each process.  The second is the parent PID.
 
-Notes:
-* Logs are stored on the PI under logs/packet_parser.log
+If the collector is not running, you might see nothing
+```
+$ ps -ef | grep python
+$
+```
+or a match on the grep process
+```
+$ ps -ef | grep python
+6057  6039  0 17:54 pts/0    00:00:00 grep --color=auto pyth
+```
+
+#### Assuming there is a collector running
+
+If you want to check on it's progress, check out the `log/dream_assets.log` file.
+```
+tail -f logs/dream_assets.log
+```
+
+If you want to stop the process, send a hangup (`-HUP`) signal to the process using the PID
+```
+sudo kill -HUP 6066
+```
+
+#### Assuming there is no running collector
+
+To start the collector, as a background process:
+```
+bin/dream_collector.py -b <bundlesize> &
+```
+
+The trailing `&` tells unix to put this process in the background.
+You can then end your `ssh` session and the collector will keep on collecting.
+
 
 ## Configurator
 
