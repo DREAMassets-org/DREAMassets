@@ -23,6 +23,9 @@ from logger import DreamAssetsLogger
 import packet_decoder
 import dream_environment
 
+env = dream_environment.fetch()
+
+
 class ScanFujitsu(btle.DefaultDelegate):
     fujitsu_packet_regex = re.compile(r'010003000300')
 
@@ -111,8 +114,6 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
     arg = parser.parse_args(sys.argv[1:])
-
-    env = dream_environment.fetch()
 
     logger = DreamAssetsLogger(arg.log_level).get()
 
