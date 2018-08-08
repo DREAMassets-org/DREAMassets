@@ -12,6 +12,8 @@ def fetch():
       'credentials': env.SECRETS["GOOGLE_CREDENTIALS_JSON_FILE"] or os.environ["GOOGLE_CREDENTIALS_JSON_FILE"],
       'bucket': env.SECRETS["GOOGLE_BUCKET"] or os.environ["GOOGLE_BUCKET"],
       'directory': env.SECRETS["GOOGLE_DIRECTORY"] or os.getenv("GOOGLE_DIRECTORY"),
+      'bq_dataset': env.SECRETS["GOOGLE_BQ_DATASET"] or os.getenv("GOOGLE_BQ_DATASET"),
+      'bq_table': env.SECRETS["GOOGLE_BQ_TABLE"] or os.getenv("GOOGLE_BQ_TABLE"),
       'host': socket.gethostname()
     }
   except TypeError:
