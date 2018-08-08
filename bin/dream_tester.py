@@ -22,16 +22,13 @@ from __future__ import print_function
 import argparse
 import sys
 import json
-
+import pdb
 sys.path.insert(0, 'lib/python')
 
 from google_cloud import GoogleCsvUploader
 from fujitsu_packet_processor import FujitsuPacketProcessor
 from logger import DreamAssetsLogger
 import dream_environment
-
-env = dream_environment.fetch()
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -43,6 +40,8 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
     arg = parser.parse_args(sys.argv[1:])
+
+    env = dream_environment.fetch()
 
     logger = DreamAssetsLogger(arg.log_level).get()
 
