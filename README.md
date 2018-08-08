@@ -584,12 +584,13 @@ nmap -sn 192.168.40.0/24
 * When you get the initial setup screen (it forces you to change your password - the initial password is 'admin') update the password for the Cassia web interface
 * This will force a restart of the Cassia
 * Hit the web page again, login with your new password and you should be able to configure the Cassia.
-* Go to the `Other` tab and set the time to be the current time in the right timezone.
+* Go to the `Other` tab and set the timezone and click "auto" to auto adjust the system time using network `ntp` systems
 * At this point you should be able to `ssh` into the container on the Cassia using the IP and a custom ssh port (20022) like so
 ```
 ssh -p 20022 cassia@192.168.40.1
 ```
 * The password for the Cassia user is `cassia`
+* Verify that the date is correct by running `date`.  You should see today's date.
 * At this point follow the normal software install instructions
 
 
