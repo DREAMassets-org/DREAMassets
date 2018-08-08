@@ -538,6 +538,36 @@ Here are the tags you flipped.
 
 You can see from above the first one that was flipped was `E24B`, second was `EDA9` etc.  And `F991` had no flips so it does not show up in the report.
 
+## Cassia X1000 Setup
+
+The Cassia X1000 is another BLE listener that has a simple web configuration front end and runs an Ubuntu instance on which we will run our data collection software.
+
+The following is basically a transcription of the Cassia setup documentation seen here http://www.cassianetworks.com/wp-content/uploads/2017/10/Cassia-S1000-S1100-X1000-Quick-Start-Guide.pdf and in the instructional PDF called "3rd Party Application Deployment Instructions" as we ran the setup for our Cassia (which we got in our email).
+
+* Plugin your router to a network connection (where it gets it's power)
+* You can connect to the Cassia's wifi network.  It's named `cassia-XX:XX:XX` where the `XX:XX:XX` is the last 3 bytes of it's mac address. The password is the same as the network name.
+* Figure out the IP you've been assigned (by going to your Network preferences tab or using `ifconfig`). It's likely to be something like `192.168.xx.x`.
+* Find the IP of the router using `nmap` (or by other IP scanner software that can connect MAC addresses with IP addresses on a local network
+
+```
+# Run nmap using your the first 3 octets from your ip with a 0 for the last.
+# This will scan all IP's from 1-255
+nmap -sn 192.168.40.0/24
+```
+* Hopefully you'll see another host on the network that is not your IP.  Try connecting to that via a browser : e.g. http://192.168.40.1
+* You should be immediately prompted for a new password.  If you were not, reset the Cassia (with the hardware reset button) and repeat from the top.
+* When you get the initial setup screen (it forces you to change your password - the initial password is 'admin') update the password for the Cassia web interface
+* This will force a restart of the Cassia
+* Hit the web page again, login with your new password and you should be able to configure the Cassia.
+* Go to the `Other` tab and set the time to be the current time in the right timezone.
+* At this point you should be able to `ssh` into the container on the Cassia using the IP and a custom ssh port (20022) like so
+```
+ssh -p 20022 cassia@192.168.40.1
+```
+* The password for the Cassia user is `cassia`
+* At this point follow the normal software install instructions
+
+
 # Appendix
 
 ## Code Organization
