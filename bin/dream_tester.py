@@ -58,7 +58,15 @@ def main():
     logger.info("Start reading packets")
     print("Reading Fujitsu Packets from file...")
 
-    uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'], logger)
+    uploader = GoogleCsvUploader(
+        env['project_id'],
+        env['credentials'],
+        env['host'],
+        env['bucket'],
+        env['directory'],
+        env['bq_dataset'],
+        env['bq_table'],
+        logger)
     processor = FujitsuPacketProcessor(arg, uploader, logger)
 
     for line in arg.file:

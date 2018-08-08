@@ -128,7 +128,15 @@ def main():
         print(repr(env))
         print
 
-    uploader = GoogleCsvUploader(env['project_id'], env['credentials'], env['host'], env['bucket'], env['directory'], logger)
+    uploader = GoogleCsvUploader(
+        env['project_id'],
+        env['credentials'],
+        env['host'],
+        env['bucket'],
+        env['directory'],
+        env['bq_dataset'],
+        env['bq_table'],
+        logger)
     if arg.scan_only:
         uploader = None
     processor = FujitsuPacketProcessor(arg, uploader, logger)

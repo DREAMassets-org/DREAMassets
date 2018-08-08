@@ -210,7 +210,7 @@ so unless you `sudo apt-get install git-core` you should use the first option
 cd DREAMassets
 git archive --prefix DREAMassets/ -o dream_assets.deployable.tar master
 ```
-* copy that tarball to the destination hub 
+* copy that tarball to the destination hub
 ```
 # for a cassia with IP 192.168.40.1
 scp -P 20022 dream_assets.deployable.tar cassia@192.168.40.1:/home/cassia/
@@ -247,7 +247,7 @@ To get your machine ready for scanning:
 sudo apt-get install libglib2.0-dev -y
 
 # install python libraries for Google Cloud and BLE hookup
-sudo pip install google-cloud-storage
+sudo pip install google-cloud-storage google-cloud-bigquery
 sudo pip install bluepy
 ```
 
@@ -256,11 +256,15 @@ the `./secrets/environment.py`. You can start with `secrets/environment.example.
 Copy that file to `./secrets/environment.py` and update the values inside the file to match your setup.  It should
 look something like :
 
+If you haven't setup your Google Cloud Storage bucket or BigQuery, yet, do that first and come back here so you'll have
+the correct values for this configuration file.
 ```
 SECRETS = {
     'GOOGLE_PROJECT_ID': 'my-google-project-id',
     'GOOGLE_BUCKET': 'my-google-bucket',
     'GOOGLE_DIRECTORY': 'my-google-bucket-directory',
+    'GOOGLE_BQ_DATASET': 'measurements_dataset',
+    'GOOGLE_BQ_TABLE': 'measurements_table',
     'GOOGLE_CREDENTIALS_JSON_FILE': './secrets/my-google-credentials.json'
 }
 ```
