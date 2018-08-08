@@ -197,7 +197,37 @@ this command returns a spew of data coming out of the `hcidump` terminal:
 Congrats :tada: -- you're sniffing data from the BLE devices near your RPi.
 Of course, raw data spewing into your terminal isn't especially useful, so now let's create some scripts to gather and parse the data.
 
-## Pulling the github repo to the Raspberry Pi
+## Installing the dream_collector software
+
+There are a couple ways to get the DREAMassets software on your hub.  You can either copy the code
+directly onto the machine or you can pull the repo using `git`.  Note: the Cassia's do not come with `git`
+so unless you `sudo apt-get install git-core` you should use the first option
+
+### Without git
+
+* Build a tarball with the software using `git` on a development machine.
+```
+cd DREAMassets
+git archive --prefix DREAMassets/ -o dream_assets.deployable.tar master
+```
+* copy that tarball to the destination hub 
+```
+# for a cassia with IP 192.168.40.1
+scp -P 20022 dream_assets.deployable.tar cassia@192.168.40.1:/home/cassia/
+
+# for a RaspPi with IP 192.168.10.10
+scp dream_assets.deployable.tar pi@192.168.1010:/home/pi/
+```
+* `ssh` to the hub and unpack that file
+```
+ssh pi@192.168.10.10
+tar -xvf dream_assets.deployable.tar
+cd DREAMassets
+```
+* At this point you should populate the `secrets/environment.py` file and setup your Google credentials JSON file.
+* Now you're ready to collect data
+
+### With git
 
 Clone the repository like so
 
