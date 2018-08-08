@@ -625,7 +625,10 @@ ssh -p 20022 cassia@192.168.40.1
 ```
 * The password for the Cassia user is `cassia`
 * Verify that the date is correct by running `date`.  You should see today's date.
-* At this point follow the normal software install instructions
+* Finally, update the hostname to something uniq so we can recognize the different Cassia's by their hub_id/hostname
+`sudo hostname my-new-cassia-hostname`
+* Update your `/etc/hosts` file to reflect this new hostname by editing `/etc/hosts` and replace the line `127.0.1.1   ubuntu` with `127.0.1.1   ubuntu my-new-cassia-hostname`
+* At this point follow the normal software install instructions.  You'll need to have the Cassia plugged into a real network or set up (via the web router configuration tool) a wireless network connection.
 
 
 # Appendix
