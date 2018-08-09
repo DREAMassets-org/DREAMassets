@@ -456,7 +456,7 @@ Here is a query that gives us a report of measurement_count per tag per hour wit
 number of measurements for that hour is more than 100 and `off` if not.  This is roughly showing what hub was hearing reports from
 which tags during the time periods.
 
-```
+```sql
 SELECT *,(
     CASE when measurement_count > 100
     then 'on'
@@ -477,7 +477,7 @@ FROM (
 ```
 
 The same query by day instead of hour, with an on/off threshold at 1000
-```
+```sql
 SELECT *,(
     CASE when measurement_count > 1000
     then 'on'
