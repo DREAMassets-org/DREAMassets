@@ -11,6 +11,7 @@
 from __future__ import print_function
 import argparse
 import sys
+import os
 import json
 import re
 from bluepy import btle
@@ -153,7 +154,28 @@ def main():
     # end
     #
     # expect bluepy built it using eventing and callbacks
-    scanner.scan(arg.timeout)
+    try:
+        if arg.timeout and arg.timeout > 0:
+            scanner.scan(arg.timeout)
+        else:
+            while True:
+                scanner.scan(arg.timeout)
+    except btle.BTLEException as ex:
+        logger.info("Flush remaining packets")
+        processor.flush()
+        print("Scanning failed with exception", file=sys.stderr)
+        print(ex, file=sys.stderr)
+        logger.fatal("Scanning stopped with exception")
+        logger.fatal(ex)
+    except KeyboardInterrupt:
+        if arg.verbose:
+            print("Flushing any remaining packets...")
+        logger.info("Flush remaining packets")
+        processor.flush()
+        try:
+            sys.exit(0)
+        except:
+            os._exit(0)
 
     logger.info("Flush remaining packets")
     processor.flush()
