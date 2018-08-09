@@ -449,6 +449,55 @@ order by timestamp desc
 1. If you got results, you are on your way.
 1. You can click "Save As" to export the data you just queried to a CSV.  This download will truncate the data at 16000 rows.
 
+
+### Other interesting queries
+
+Here is a query that gives us a report of measurement_count per tag per hour with a `tag_is_reporting` column that reports `on` if the
+number of measurements for that hour is more than 100 and `off` if not.  This is roughly showing what hub was hearing reports from
+which tags during the time periods.
+
+```
+SELECT *,(
+    CASE when measurement_count > 100
+    then 'on'
+    else 'off'
+    END
+    ) AS tag_is_reporting
+FROM (
+  SELECT
+    hub_id,
+    tag_id,
+    count(*) as measurement_count,
+    datetime_trunc(DATETIME(PARSE_TIMESTAMP("%s", cast(timestamp as string)), "America/Los_Angeles"), hour) as ts
+    FROM
+    measurements_dataset.measurements_table
+    GROUP BY hub_id, tag_id, ts
+    ORDER BY ts desc, hub_id, tag_id
+)
+```
+
+The same query by day instead of hour, with an on/off threshold at 1000
+```
+SELECT *,(
+    CASE when measurement_count > 1000
+    then 'on'
+    else 'off'
+    END
+    ) AS tag_is_reporting
+FROM (
+  SELECT
+    hub_id,
+    tag_id,
+    count(*) as measurement_count,
+    datetime_trunc(DATETIME(PARSE_TIMESTAMP("%s", cast(timestamp as string)), "America/Los_Angeles"), day) as ts
+    FROM
+    measurements_dataset.measurements_table
+    GROUP BY hub_id, tag_id, ts
+    ORDER BY ts desc, hub_id, tag_id
+)
+```
+
+
 ## Required environment variables on the Hub
 
 
