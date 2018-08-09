@@ -155,14 +155,21 @@ def main():
     #
     # expect bluepy built it using eventing and callbacks
     try:
-        scanner.scan(arg.timeout)
+        if arg.timeout and arg.timeout > 0:
+            scanner.scan(arg.timeout)
+        else:
+            while True:
+                scanner.scan(arg.timeout)
     except btle.BTLEException as ex:
         logger.info("Flush remaining packets")
         processor.flush()
+        print("Scanning failed with exception", file=sys.stderr)
+        print(ex, file=sys.stderr)
         logger.fatal("Scanning stopped with exception")
         logger.fatal(ex)
-        continue()
-    except KeyboardInput:
+    except KeyboardInterrupt:
+        if arg.verbose:
+            print("Flushing any remaining packets...")
         logger.info("Flush remaining packets")
         processor.flush()
         try:
