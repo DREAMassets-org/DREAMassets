@@ -27,7 +27,7 @@ Make sure you are on the **same wireless network** as it will only be availble w
 ## Get the RPi ready for Bluetooth Low Energy (BLE)
 We need a few extra packages for the Pi to be a BLE scanner.
 
-```
+```bash
 # Get the machine the latest list of software and the latest software
 sudo apt-get update
 sudo apt-get upgrade -y
@@ -35,17 +35,17 @@ sudo apt-get upgrade -y
 
 Then get Bluez itself:
 
-```
+```bash
 sudo apt-get install bluez bluez-hcidump -y
 ```
 
 For remote usage we should also probably get `screen`
-```
+```bash
 sudo apt-get install screen -y
 ```
 
 For the configurator machine only, you'll also need the `curses` library
-```
+```bash
 sudo apt-get install libncurses5-dev libncursesw5-dev ruby-dev -y
 ```
 
@@ -55,14 +55,14 @@ If you're planning to hook up to Soracom, you'll need a few more bits.
 
 Make sure you have the latest `network-manager` software
 
-```
+```bash
 sudo apt-get update && sudo apt-get install network-manager
 
-```
+```bash
 
 Setup an APN (Access Point Name) for the SORACOM SIM to connect to the SORACOM mobile network
 
-```
+```bash
 sudo nmcli con add type gsm ifname "*" con-name soracom apn soracom.io user sora password sora
 ```
 
@@ -70,7 +70,7 @@ This should give you a response like `Connection 'soracom' (3cbecb73-2f6c-48f9-8
 
 Restart your Pi
 
-```
+```bash
 sudo shutdown -r now
 ```
 
@@ -80,7 +80,7 @@ SSH back into the Pi.
 
 Once the light on the SORACOM goes blue, you should see `ppp0` in your `ifconfig` output.
 
-```
+```bash
 $ ifconfig
 eth0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
         ether b8:27:eb:66:1e:ca  txqueuelen 1000  (Ethernet)
@@ -118,7 +118,7 @@ wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 We want the `ppp0` (which is the cell networking interface) to be our default.  We can acheive this by grabbing a helper script from SORACOM and running it.
 
-```
+```bash
 # Copy the ppp_route_metric script from the repo to the system startup directory
 sudo cp soracom/90.set_ppp_route_metric /etc/NetworkManager/dispatcher.d/
 # Make it executable
@@ -131,7 +131,7 @@ This step will also set things up so that when the machine starts up again, it w
 
 To confirm, check that the `ppp0` is listed first in your routing table.
 
-```
+```bash
 route -n
 
 Kernel IP routing table
@@ -143,7 +143,7 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 At this point you should be on the network via SORACOM.  You can also check using `traceroute`.  The first hop for SORACOM (during
 our testing phase) was an Amazon system.  Notice the high latency... more proof that you're on a cell network.
 
-```
+```bash
 traceroute www.whatsmyip.com
 
 traceroute to www.whatsmyip.com (104.25.36.116), 30 hops max, 60 byte packets
@@ -160,7 +160,7 @@ Bluez provides the commands `hcitool` and `hcidump` which are the main tools we 
 
 To start sniffing, open 2 consoles on the Pi.  In the first console, start up a scanner
 
-```
+```bash
 sudo hciconfig hc0 up
 sudo hcitool lescan
 ```
@@ -177,7 +177,7 @@ DC:56:E7:3C:F6:5F (unknown)
 ```
 
 While the first console continues to output BLE addresses, go to the second console and start up the data dumper:
-```
+```bash
 sudo hcidump --raw
 ```
 this command returns a spew of data coming out of the `hcidump` terminal:
@@ -206,12 +206,12 @@ so unless you `sudo apt-get install git-core` you should use the first option
 ### Without git
 
 * Build a tarball with the software using `git` on a development machine.
-```
+```bash
 cd DREAMassets
 git archive --prefix DREAMassets/ -o dream_assets.deployable.tar master
-```
+```bash
 * copy that tarball to the destination hub
-```
+```bash
 # for a cassia with IP 192.168.40.1
 scp -P 20022 dream_assets.deployable.tar cassia@192.168.40.1:/home/cassia/
 
@@ -219,7 +219,7 @@ scp -P 20022 dream_assets.deployable.tar cassia@192.168.40.1:/home/cassia/
 scp dream_assets.deployable.tar pi@192.168.1010:/home/pi/
 ```
 * `ssh` to the hub and unpack that file
-```
+```bash
 ssh pi@192.168.10.10
 tar -xvf dream_assets.deployable.tar
 cd DREAMassets
@@ -231,7 +231,7 @@ cd DREAMassets
 
 Clone the repository like so
 
-```
+```bash
 git clone https://github.com/DREAMassets/DREAMassets.git
 ```
 
@@ -241,7 +241,7 @@ the instructions below on using the scanner and parser scripts.
 ## Python Scanner/Uploader
 
 To get your machine ready for scanning:
-```
+```bash
 # grab glib2.0 library for python native library building
 
 sudo apt-get install libglib2.0-dev -y
@@ -258,7 +258,7 @@ look something like :
 
 If you haven't setup your Google Cloud Storage bucket or BigQuery, yet, do that first and come back here so you'll have
 the correct values for this configuration file.
-```
+```python
 SECRETS = {
     'GOOGLE_PROJECT_ID': 'my-google-project-id',
     'GOOGLE_BUCKET': 'my-google-bucket',
@@ -276,27 +276,27 @@ above to point to that file.
 Now you should be able to start scanning and collecting...
 
 Run for 10 seconds (`-t 10`) and send every 10 measurements to Google Cloud (`-b 20`)
-```
+```bash
 sudo bin/dream_collector.py -t 10 -b 20
 ```
 
 Run forever and send every 1500 measurements to Google Cloud (`-b 1500`)
-```
+```bash
 sudo bin/dream_collector.py -b 1500
 ```
 
 Print measurements to the console as they are collected (`-v`)
-```
+```bash
 sudo bin/dream_collector.py -v -b 100 -t 10
 ```
 
 Show the help message
-```
+```bash
 sudo bin/dream_collector.py -h
 ```
 
 Update the log level
-```
+```bash
 sudo bin/dream_collector.py -l INFO
 ```
 
@@ -334,13 +334,13 @@ Using a short ruby script, you can parse the data from the scanner.
 
 
 Since we're using ruby, you'll need to make sure you have `bundler` available to ruby.  This is a one time setup.  On your Pi simply run
-```
+```bash
 sudo gem install bundler
 ```
 
 Assuming you've saved the scanner data in a file called `packets.txt`, you'd run
 
-```
+```bash
 cat packets.txt | bin/packet_parser.rb
 ```
 
@@ -362,7 +362,7 @@ Acceleration is measured in g's.  Rssi units are currently unknown but run from 
 Because we're hooking up to Google, we need to setup the following variables in our environment
 which will allow us to authenticate properly and use the google services through our scripts
 
-```
+```bash
 GOOGLE_PROJECT_ID=<your google project id>
 GOOGLE_BUCKET=dream-assets-orange  (or a custom bucket name)
 GOOGLE_DIRECTORY=measurements
@@ -426,24 +426,24 @@ hub_id:STRING,tag_id:STRING,temperature:FLOAT,x_accel:FLOAT,y_accel:FLOAT,z_acce
 1. click "Create table"
 1. You should, in a few seconds, get a success message that says the table was created.
 1. Click on the table and in the query editor, try test query like
-```
+```sql
 select count(*) from dream_assets_dataset.measurements_table;
 ```
 1. Click on Run Query
 1. Your result should be the number of rows of data you have sitting in that bucket.
 1. Try a more informative query like the following (you should update hub id, tag id, and timestamps to values for which you expect a match)
-```
+```sql
 SELECT
   DATETIME(PARSE_TIMESTAMP("%s", cast(measurements.timestamp as string)), "America/Los_Angeles") as ts_datetime,
   measurements.*
 FROM
   dream_assets_dataset.measurements_table measurements,
-where
+WHERE
   measurements.timestamp > 1532538000 # 10am July 25 2018 PST
   and measurements.timestamp < 1532545200 # 12am July 25 2018 PST
   and measurements.tag_id='<tag id>'
   and measurements.hub_id='<hub id>'
-order by timestamp desc
+ORDER BY timestamp DESC
 ```
 
 1. If you got results, you are on your way.
