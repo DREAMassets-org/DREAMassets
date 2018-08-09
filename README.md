@@ -682,6 +682,51 @@ ssh -p 20022 cassia@192.168.40.1
 
 # Appendix
 
+## Generating daily reports
+
+We built a cloud function that will generate reports about events collected per tag and per hub for each hour and each day of all the data we have collected in a bucket.  The function is under `cloud_functions/generate_events_reports/`.
+
+It can be deployed to GoogleCloudFunctions using their `gcloud` cli from the directory that includes the `main.py` for that function:
+```bash
+cd cloud_functions/generate_events_report
+gcloud beta functions deploy generate_events_reports --trigger-http --runtime python37 --timeout 120
+```
+Note: we have a fairly long timeout since this function is doing a lot of work and 60s (the default timeout) may not be quite enough time.
+
+When it's deployed, you'll see a URL in the output which is the "trigger" to run the function.
+
+```
+availableMemoryMb: 256
+entryPoint: generate_events_reports
+httpsTrigger:
+  url: https://us-central1-dreamassettester.cloudfunctions.net/generate_events_reports
+labels:
+  deployment-tool: cli-gcloud
+name: projects/dreamassettester/locations/us-central1/functions/generate_events_reports
+runtime: python37
+...
+```
+
+To trigger the job manually, you can poke that endpoint with `curl`:
+```bash
+curl https://us-central1-dreamassettester.cloudfunctions.net/generate_events_reports
+
+```
+
+Once it's run, you should see some new files in your bucket under `events/` called
+`measurements_per_tag_per_hour.<date>.csv`,
+`measurements_per_hub_per_hour.<date>.csv`,
+`measurements_per_tag_per_day.<date>.csv`,
+`measurements_per_hub_per_day.<date>.csv`.  These files are CSVs that include the number of measurements collected
+rolled up by tag or hub for each hour or each day (depending on which file you select).  These reports are collected for
+*all* the data in the BigQuery `measurements` table.
+
+To see the logs for this function use:
+```bash
+gcloud functions logs read generate_events_reports
+```
+
+
 ## Code Organization
 
 Everything under the `bin` directory should be our executable scripts.  Examples are the `packet_parser.rb` and `tag_scanner.sh`.  Helper functions and other modules for both bash and ruby will live under the `lib` directory in their respective language named directories (e.g. `lib/ruby` holds all the ruby libraries and helper modules)
