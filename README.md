@@ -550,7 +550,11 @@ sudo kill -HUP 6066
 
 To start the collector, as a background process:
 ```
-bin/dream_collector.py -b <bundlesize> &
+nohup bin/dream_collector.py -b <bundlesize> &
+```
+or if you need to be super user
+```
+sudo nohup bin/dream_collector.py -b <bundlesize> &
 ```
 
 The trailing `&` tells unix to put this process in the background.
@@ -744,6 +748,9 @@ At the end of this, you'll get a link that shows you your scheduled jobs in the 
 Since the job we've built is daily, if you want to try it out, you should see a button in the Google Cloud console under
 App Engine -> Task Queues -> Cron Jobs tab.
 
+## Error Reporting
+
+When this python code fails, information can be found in the Google Cloud Error Reporting section.  Check out our Error Reporting story in Pivotal for more details
 
 ## Code Organization
 
