@@ -107,7 +107,7 @@ class GoogleCloudCSVStorage(GoogleCloudStorage):
 
 
 class GoogleCsvUploader():
-  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, dataset_name, table_name, logger=None):
+  def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, dataset_name, table_name, **kwargs):
     self.project_id = project_id
     self.credentials_file = credentials_file
     self.hub_id = hub_id
@@ -115,14 +115,17 @@ class GoogleCsvUploader():
     self.base_directory = directory or ''
     self.dataset_name = dataset_name
     self.table_name = table_name
-    self.logger = logger
+    self.auto_update_big_query = kwargs['big_query_update']
+    self.logger = kwargs['logger']
 
   def package_and_upload(self, measurements):
     self.logger and self.logger.info("Uploading %d measurements to the %s bucket" % (len(measurements), self.bucket_name))
     gcs = GoogleCloudCSVStorage(self.project_id, self.credentials_file, self.hub_id, self.bucket_name, self.base_directory, self.logger)
     url = gcs.upload(measurements)
     self.logger and self.logger.debug("Uploaded to %s" % url)
-    gbq = GoogleBigQuery(self.project_id, self.credentials_file, self.dataset_name, self.table_name, self.logger)
-    gbq.update(url)
-    self.logger and self.logger.debug("Updated BigQuery:%s:%s" % (self.dataset_name, self.table_name))
+
+    if self.auto_update_big_query:
+      gbq = GoogleBigQuery(self.project_id, self.credentials_file, self.dataset_name, self.table_name, self.logger)
+      gbq.update(url)
+      self.logger and self.logger.debug("Updated BigQuery:%s:%s" % (self.dataset_name, self.table_name))
     return url
