@@ -9,7 +9,7 @@
 ### END INIT INFO
 
 NAME=dream_collector
-SCRIPT=`cd ~pi && bin/dream_collector.py -b 5000 &` 
+SCRIPT=`cd ~cassia/DREAMassets/ && bin/dream_collector.py -b 5000 &` 
 RUNAS=root
 
 PIDFILE=/var/run/${NAME}.pid
