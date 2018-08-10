@@ -10,6 +10,7 @@
 
 from __future__ import print_function
 import argparse
+import signal
 import sys
 import os
 import json
@@ -99,6 +100,21 @@ class ScanFujitsu(btle.DefaultDelegate):
                print(msg, file=sys.stderr)
             return ''
 
+PID_FILE = 'pid.lock'
+def ensure_no_other_scanners():
+    if os.path.isfile(PID_FILE):
+	print("It looks like there may be another scanner running.  If this is not true, remove the {} file and try again".format(PID_FILE), file=sys.stderr)
+        exit(1)
+
+def pid_lock(logger=None):
+    logger and logger.debug("Writing pid to {}".format(PID_FILE))
+    fp = open(PID_FILE, "w")
+    fp.write(str(os.getpid()))
+    fp.close()
+
+def pid_unlock(logger=None):
+    logger and logger.debug("Removing {}".format(PID_FILE))
+    os.unlink(PID_FILE)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -144,6 +160,19 @@ def main():
     fujitsu_listener = ScanFujitsu(arg, processor, logger)
     scanner = btle.Scanner(arg.hci).withDelegate(fujitsu_listener)
 
+    def signal_handler(sig, frame):
+        logger.debug("Caught signal {}".format(sig))
+        processor and processor.flush()
+        sys.exit(0)
+
+    logger.info("Checking for other scanner processes")
+    ensure_no_other_scanners()
+
+    # register interrupt handler
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGHUP, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     logger.info("Start scanning")
     print("Scanning for Fujitsu Packets...")
 
@@ -155,11 +184,8 @@ def main():
     #
     # expect bluepy built it using eventing and callbacks
     try:
-        if arg.timeout and arg.timeout > 0:
-            scanner.scan(arg.timeout)
-        else:
-            while True:
-                scanner.scan(arg.timeout)
+        pid_lock(logger)
+        scanner.scan(arg.timeout)
     except btle.BTLEException as ex:
         logger.info("Flush remaining packets")
         processor.flush()
@@ -167,18 +193,10 @@ def main():
         print(ex, file=sys.stderr)
         logger.fatal("Scanning stopped with exception")
         logger.fatal(ex)
-    except KeyboardInterrupt:
-        if arg.verbose:
-            print("Flushing any remaining packets...")
+    finally:
         logger.info("Flush remaining packets")
         processor.flush()
-        try:
-            sys.exit(0)
-        except:
-            os._exit(0)
-
-    logger.info("Flush remaining packets")
-    processor.flush()
+        pid_unlock(logger)
     logger.info("Done scanning")
 
 
