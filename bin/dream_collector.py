@@ -170,6 +170,8 @@ def main():
 
     # register interrupt handler
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGHUP, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     logger.info("Start scanning")
     print("Scanning for Fujitsu Packets...")
