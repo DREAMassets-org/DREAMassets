@@ -126,6 +126,7 @@ def main():
                         help='dBm value for filtering far devices')
     parser.add_argument('-b', '--bundle-size', type=int,
                         help='Number of measurements to send in each bundle', default=100)
+    parser.add_argument('--no-big-query-update', action='store_true', help="Disable the BigQuery update notification after new data has been sent to Google.")
     parser.add_argument('-S', '--scan-only', action='store_true', help="Scan only.  Don't upload any data.  Should be used with -v option")
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -153,7 +154,8 @@ def main():
         env['directory'],
         env['bq_dataset'],
         env['bq_table'],
-        logger)
+        big_query_update=(not arg.no_big_query_update),
+        logger=logger)
     if arg.scan_only:
         uploader = None
     processor = FujitsuPacketProcessor(arg, uploader, logger)
