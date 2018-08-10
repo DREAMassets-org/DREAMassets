@@ -707,9 +707,10 @@ runtime: python37
 ...
 ```
 
-To trigger the job manually, you can poke that endpoint with `curl`:
+To trigger the job manually, you can poke that endpoint with `curl`.  You'll need to replace the bucket, dataset and table variables
+in the curl to properly run this job.
 ```bash
-curl https://us-central1-dreamassettester.cloudfunctions.net/generate_events_reports
+curl https://us-central1-dreamassettester.cloudfunctions.net/generate_events_reports?bucket=<bucket>&bq_dataset=<dataset id>&bq_table=<measurements table name>
 
 ```
 
@@ -725,6 +726,23 @@ To see the logs for this function use:
 ```bash
 gcloud functions logs read generate_events_reports
 ```
+
+## Setting up the scheduler app to generate reports daily
+
+We have enough code to setup a couple of Google App Engine apps that will on a daily basis kick off the above event generator reports.
+
+To get them deployed, you need to
+
+1. edit the Google project, bucket table etc settings in `event_reports_scheduler/main.py`
+1. Deploy the apps to google with your `gcloud` tool
+```
+gcloud app deploy app.yaml
+gcloud app deploy cron.yaml
+```
+
+At the end of this, you'll get a link that shows you your scheduled jobs in the Google Console.
+Since the job we've built is daily, if you want to try it out, you should see a button in the Google Cloud console under
+App Engine -> Task Queues -> Cron Jobs tab.
 
 
 ## Code Organization
