@@ -17,7 +17,11 @@ class Logger(object):
             handler.setFormatter(formatter)
             handler.setLevel(level or logging.DEBUG)
             logger.addHandler(handler)
+
         self._logger = logger
+
+    def file_descriptors(self):
+        return map(lambda handler: handler.stream.fileno(), self._logger.handlers)
 
     def get(self):
         return self._logger

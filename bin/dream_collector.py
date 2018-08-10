@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # This script was designed to run on a RaspberryPi or Cassia X1000 system that has the `bluez`
 # BLE listening software installed.
@@ -11,6 +12,8 @@
 from __future__ import print_function
 import argparse
 import signal
+import daemon
+import lockfile
 import sys
 import os
 import json
@@ -100,21 +103,62 @@ class ScanFujitsu(btle.DefaultDelegate):
                print(msg, file=sys.stderr)
             return ''
 
-PID_FILE = 'pid.lock'
-def ensure_no_other_scanners():
-    if os.path.isfile(PID_FILE):
-	print("It looks like there may be another scanner running.  If this is not true, remove the {} file and try again".format(PID_FILE), file=sys.stderr)
-        exit(1)
 
-def pid_lock(logger=None):
-    logger and logger.debug("Writing pid to {}".format(PID_FILE))
-    fp = open(PID_FILE, "w")
-    fp.write(str(os.getpid()))
-    fp.close()
+class DreamScanner():
 
-def pid_unlock(logger=None):
-    logger and logger.debug("Removing {}".format(PID_FILE))
-    os.unlink(PID_FILE)
+    def __init__(self, options, env, **kwargs):
+        self.options = options
+        self.uploader = None
+        self.logger = kwargs['logger']
+        if not options.scan_only:
+            self.uploader = GoogleCsvUploader(
+                env['project_id'],
+                env['credentials'],
+                env['host'],
+                env['bucket'],
+                env['directory'],
+                env['bq_dataset'],
+                env['bq_table'],
+                big_query_update=(not options.no_big_query_update),
+                logger=self.logger)
+        self.processor = FujitsuPacketProcessor(options, self.uploader, logger=self.logger)
+        self.fujitsu_listener = ScanFujitsu(options, self.processor, self.logger)
+        self.scanner = btle.Scanner(options.hci).withDelegate(self.fujitsu_listener)
+
+
+    def shutdown(self, sig, frame):
+        self.logger.debug("Caught signal {}".format(sig))
+        self.processor and self.processor.flush()
+        sys.exit(0)
+
+    def scan(self):
+        uploader = None
+
+        self.logger.info("Start scanning")
+        print("Scanning for Fujitsu Packets...")
+
+        # The code below `scanner.scan()` is very much like
+        #
+        # while packet = scan_for_packet
+        #    ScanFujitsu.handleDiscovery(packet)
+        # end
+        #
+        # expect bluepy built it using eventing and callbacks
+        try:
+            self.logger.debug("Sanity check... scan for 10 seconds and push that to Google")
+            self.scanner.scan(10)
+            self.logger.info("Flushing sanity check packets")
+            self.processor.flush()
+            self.scanner.scan(self.options.timeout)
+        except btle.BTLEException as ex:
+            print("Scanning failed with exception", file=sys.stderr)
+            print(ex, file=sys.stderr)
+            self.logger.fatal("Scanning stopped with exception")
+            self.logger.fatal(ex)
+        finally:
+            self.logger.info("Flushing remaining measurements")
+            self.processor.flush()
+        self.logger.info("Done scanning")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -129,11 +173,14 @@ def main():
     parser.add_argument('--no-big-query-update', action='store_true', help="Disable the BigQuery update notification after new data has been sent to Google.")
     parser.add_argument('-S', '--scan-only', action='store_true', help="Scan only.  Don't upload any data.  Should be used with -v option")
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
+    parser.add_argument('-d', '--daemonize', action='store_true',
+                        help='Run as a daemon in the background')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
     arg = parser.parse_args(sys.argv[1:])
 
-    logger = DreamAssetsLogger(arg.log_level).get()
+    logging_system = DreamAssetsLogger(arg.log_level)
+    logger = logging_system.get()
 
     logger.info("Running with args: %s" % arg)
     logger.info("Current Environment: %s" % env)
@@ -146,63 +193,29 @@ def main():
         print(repr(env))
         print
 
-    uploader = GoogleCsvUploader(
-        env['project_id'],
-        env['credentials'],
-        env['host'],
-        env['bucket'],
-        env['directory'],
-        env['bq_dataset'],
-        env['bq_table'],
-        big_query_update=(not arg.no_big_query_update),
-        logger=logger)
-    if arg.scan_only:
-        uploader = None
-    processor = FujitsuPacketProcessor(arg, uploader, logger=logger)
-    fujitsu_listener = ScanFujitsu(arg, processor, logger)
-    scanner = btle.Scanner(arg.hci).withDelegate(fujitsu_listener)
+    scanner = DreamScanner(arg, env, logger=logger)
+    if arg.daemonize:
+        logger.info("Daemonizing the process 😈")
 
-    def signal_handler(sig, frame):
-        logger.debug("Caught signal {}".format(sig))
-        processor and processor.flush()
-        sys.exit(0)
+        with daemon.DaemonContext(
+                working_directory="/home/pi/DREAMassets/",
+                files_preserve=logging_system.file_descriptors(),
+                signal_map={
+                    signal.SIGINT: scanner.shutdown,
+                    signal.SIGHUP: scanner.shutdown,
+                    signal.SIGTERM: scanner.shutdown,
+                    signal.SIGTSTP: scanner.shutdown
+                },
+                pidfile=lockfile.FileLock('dream_collector.pid')):
+            scanner.scan()
+    else:
+        # register interrupt handler
+        signal.signal(signal.SIGINT, scanner.shutdown)
+        signal.signal(signal.SIGHUP, scanner.shutdown)
+        signal.signal(signal.SIGTERM, scanner.shutdown)
+        signal.signal(signal.SIGTSTP, scanner.shutdown)
 
-    logger.info("Checking for other scanner processes")
-    ensure_no_other_scanners()
-
-    # register interrupt handler
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGHUP, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    logger.info("Start scanning")
-    print("Scanning for Fujitsu Packets...")
-
-    # The code below `scanner.scan()` is very much like
-    #
-    # while packet = scan_for_packet
-    #    ScanFujitsu.handleDiscovery(packet)
-    # end
-    #
-    # expect bluepy built it using eventing and callbacks
-    try:
-        pid_lock(logger)
-        logger.debug("Sanity check... scan for 10 seconds and push that to Google")
-        scanner.scan(10)
-        logger.info("Flushing sanity check packets")
-        processor.flush()
-        scanner.scan(arg.timeout)
-    except btle.BTLEException as ex:
-        print("Scanning failed with exception", file=sys.stderr)
-        print(ex, file=sys.stderr)
-        logger.fatal("Scanning stopped with exception")
-        logger.fatal(ex)
-    finally:
-        logger.info("Flushing remaining measurements")
-        processor.flush()
-        pid_unlock(logger)
-    logger.info("Done scanning")
-
+        scanner.scan()
 
 if __name__ == "__main__":
     main()

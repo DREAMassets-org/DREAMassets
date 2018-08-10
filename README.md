@@ -248,6 +248,7 @@ sudo apt-get install libglib2.0-dev -y
 
 # install python libraries for Google Cloud and BLE hookup
 sudo pip install google-cloud-storage google-cloud-bigquery
+sudo pip install python-daemon
 sudo pip install bluepy
 ```
 
