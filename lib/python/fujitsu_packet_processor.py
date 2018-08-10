@@ -7,11 +7,11 @@ import time
 # processor)
 class FujitsuPacketProcessor():
     fujitsu_packet_regex = re.compile(r'010003000300')
-    def __init__(self, opts, uploader, logger):
+    def __init__(self, opts, uploader, **kwargs):
         self.bundle = []
         self.opts = opts
         self.uploader = uploader
-        self.logger = logger
+        self.logger = kwargs['logger']
 
     def addMeasurement(self, measurement):
         measurement.update({'timestamp': time.time()})

@@ -158,7 +158,7 @@ def main():
         logger=logger)
     if arg.scan_only:
         uploader = None
-    processor = FujitsuPacketProcessor(arg, uploader, logger)
+    processor = FujitsuPacketProcessor(arg, uploader, logger=logger)
     fujitsu_listener = ScanFujitsu(arg, processor, logger)
     scanner = btle.Scanner(arg.hci).withDelegate(fujitsu_listener)
 
@@ -187,16 +187,18 @@ def main():
     # expect bluepy built it using eventing and callbacks
     try:
         pid_lock(logger)
+        logger.debug("Sanity check... scan for 10 seconds and push that to Google")
+        scanner.scan(10)
+        logger.info("Flushing sanity check packets")
+        processor.flush()
         scanner.scan(arg.timeout)
     except btle.BTLEException as ex:
-        logger.info("Flush remaining packets")
-        processor.flush()
         print("Scanning failed with exception", file=sys.stderr)
         print(ex, file=sys.stderr)
         logger.fatal("Scanning stopped with exception")
         logger.fatal(ex)
     finally:
-        logger.info("Flush remaining packets")
+        logger.info("Flushing remaining measurements")
         processor.flush()
         pid_unlock(logger)
     logger.info("Done scanning")
