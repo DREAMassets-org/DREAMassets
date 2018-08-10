@@ -99,6 +99,13 @@ class ScanFujitsu(btle.DefaultDelegate):
                print(msg, file=sys.stderr)
             return ''
 
+def ensure_no_other_scanners():
+    pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
+    for pid in pids:
+        try:
+            print(open(os.path.join('/proc', pid, 'cmdline'), 'rb').read())
+        except IOError: # proc has already terminated
+            continue
 
 def main():
     parser = argparse.ArgumentParser()
@@ -143,6 +150,9 @@ def main():
     processor = FujitsuPacketProcessor(arg, uploader, logger)
     fujitsu_listener = ScanFujitsu(arg, processor, logger)
     scanner = btle.Scanner(arg.hci).withDelegate(fujitsu_listener)
+
+    logger.info("Checking for other scanner processes")
+    ensure_no_other_scanners()
 
     logger.info("Start scanning")
     print("Scanning for Fujitsu Packets...")
