@@ -198,7 +198,7 @@ def main():
         logger.info("Daemonizing the process 😈")
 
         with daemon.DaemonContext(
-                working_directory="/home/pi/DREAMassets/",
+                working_directory="./DREAMassets/",
                 files_preserve=logging_system.file_descriptors(),
                 signal_map={
                     signal.SIGINT: scanner.shutdown,
