@@ -549,16 +549,15 @@ sudo kill -HUP 6066
 
 #### Assuming there is no running collector
 
-To start the collector, as a background process:
+To start the collector, as a daemon:
 ```
-nohup bin/dream_collector.py -b <bundlesize> &
+nohup bin/dream_collector.py -b <bundlesize> -d
 ```
 or if you need to be super user
 ```
-sudo nohup bin/dream_collector.py -b <bundlesize> &
+sudo nohup bin/dream_collector.py -b <bundlesize> -d
 ```
 
-The trailing `&` tells unix to put this process in the background.
 You can then end your `ssh` session and the collector will keep on collecting.
 
 
