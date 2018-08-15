@@ -119,7 +119,7 @@ class DreamScanner():
                 env['directory'],
                 env['bq_dataset'],
                 env['bq_table'],
-                big_query_update=(not options.no_big_query_update),
+                big_query_update=options.big_query_update,
                 logger=self.logger)
         self.processor = FujitsuPacketProcessor(options, self.uploader, logger=self.logger)
         self.fujitsu_listener = ScanFujitsu(options, self.processor, self.logger)
@@ -170,7 +170,7 @@ def main():
                         help='dBm value for filtering far devices')
     parser.add_argument('-b', '--bundle-size', type=int,
                         help='Number of measurements to send in each bundle', default=100)
-    parser.add_argument('--no-big-query-update', action='store_true', help="Disable the BigQuery update notification after new data has been sent to Google.")
+    parser.add_argument('--big-query-update', action='store_true', help="Enable the BigQuery update notification after new data has been sent to Google. Default: false")
     parser.add_argument('-S', '--scan-only', action='store_true', help="Scan only.  Don't upload any data.  Should be used with -v option")
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
     parser.add_argument('-d', '--daemonize', action='store_true',
@@ -198,7 +198,7 @@ def main():
         logger.info("Daemonizing the process 😈")
 
         with daemon.DaemonContext(
-                working_directory="./DREAMassets/",
+                working_directory=".",
                 files_preserve=logging_system.file_descriptors(),
                 signal_map={
                     signal.SIGINT: scanner.shutdown,
