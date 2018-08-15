@@ -109,7 +109,7 @@ class DreamScanner():
     def __init__(self, options, env, **kwargs):
         self.options = options
         self.uploader = None
-        self.logger = kwargs['logger']
+        self.logger = kwargs.get('logger', None)
         if not options.scan_only:
             self.uploader = GoogleCsvUploader(
                 env['project_id'],

@@ -54,9 +54,6 @@ log.info "Started Parsing Packets"
 
 ### *** THE MAIN SCRIPT ***
 
-# set the hub_id to the hostname of the Raspberry Pi
-HUB_ID = `hostname`.chomp
-
 # The raw Fujitsu data will arrive in this regular expression (REGEX); sample data is in the comments above
 # We define the <names> and {number of characters} for each part of the REGEX
 PACKET_DATA_REGEX = %r{^(?<prefix>.{14})(?<tag_id>.{12})15020104(?<unused>.{8})010003000300(?<temperature>.{4})(?<x_acc>.{4})(?<y_acc>.{4})(?<z_acc>.{4})(?<rssi>.{2})$}
@@ -69,6 +66,9 @@ GOOGLE_CREDENTIALS_JSON = ENV.fetch("GOOGLE_CREDENTIALS_JSON_FILE")
 # our defaults values are "dream-assets-orange" and "measurements"
 GOOGLE_BUCKET = ENV.fetch("GOOGLE_BUCKET", "dream-assets-orange")
 GOOGLE_BUCKET_DIRECTORY = ENV.fetch("GOOGLE_BUCKET_DIRECTORY", "measurements")
+# set the hub_id to the hostname of the Raspberry Pi
+HUB_ID = ENV.fetch("HUB_ID", `hostname`.chomp)
+
 
 log.debug("Build Google Service")
 

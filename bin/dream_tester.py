@@ -66,7 +66,7 @@ def main():
         env['bq_dataset'],
         env['bq_table'],
         logger=logger)
-    processor = FujitsuPacketProcessor(arg, uploader, logger)
+    processor = FujitsuPacketProcessor(arg, uploader, logger=logger)
 
     for line in arg.file:
         try:
