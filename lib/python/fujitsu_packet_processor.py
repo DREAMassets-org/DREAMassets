@@ -1,8 +1,8 @@
 import re
 import time
 
-# This class processes measurements by collecting them in 
-# bundle and when the bundle is the right size, upload them via the 
+# This class processes measurements by collecting them in
+# bundle and when the bundle is the right size, upload them via the
 # uploader (which is passed in when we construct the instance of the
 # processor)
 class FujitsuPacketProcessor():
@@ -11,7 +11,7 @@ class FujitsuPacketProcessor():
         self.bundle = []
         self.opts = opts
         self.uploader = uploader
-        self.logger = kwargs['logger']
+        self.logger = kwargs.get('logger', None)
 
     def addMeasurement(self, measurement):
         measurement.update({'timestamp': time.time()})

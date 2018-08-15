@@ -115,8 +115,8 @@ class GoogleCsvUploader():
     self.base_directory = directory or ''
     self.dataset_name = dataset_name
     self.table_name = table_name
-    self.auto_update_big_query = kwargs['big_query_update']
-    self.logger = kwargs['logger']
+    self.auto_update_big_query = kwargs.get('big_query_update', False)
+    self.logger = kwargs.get('logger', None)
 
   def package_and_upload(self, measurements):
     self.logger and self.logger.info("Uploading %d measurements to the %s bucket" % (len(measurements), self.bucket_name))

@@ -15,7 +15,7 @@ def fetch():
       'directory': env.SECRETS["GOOGLE_DIRECTORY"] or os.getenv("GOOGLE_DIRECTORY"),
       'bq_dataset': env.SECRETS["GOOGLE_BQ_DATASET"] or os.getenv("GOOGLE_BQ_DATASET"),
       'bq_table': env.SECRETS["GOOGLE_BQ_TABLE"] or os.getenv("GOOGLE_BQ_TABLE"),
-      'host': socket.gethostname()
+      'host': env.SECRETS.get("HUB_ID", socket.gethostname())
     }
     if not os.path.isfile(settings['credentials']):
       msg = ("The GOOGLE_CREDENTIALS_JSON_FILE %s does not seem to exist."
