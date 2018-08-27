@@ -144,7 +144,7 @@ class DreamCollector():
         self.processor and self.processor.flush()
         sys.exit(0)
 
-    def timed_scan_and_flush(scan_time):
+    def timed_scan_and_flush(self, scan_time):
         self.logger.debug("Scan for %d seconds..." % scan_time)
         # The code below `scanner.scan()` is very much like
         #
