@@ -25,6 +25,6 @@ def fetch():
     return settings
   except TypeError:
     print("\n***")
-    print("Did you forget to setup your environment variables?")
+    print(" There's a problem with your environment variables (credentials file and/or environment.py file). Please check them. ")
     print("***\n")
     raise

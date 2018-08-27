@@ -9,6 +9,7 @@
 #
 # Mike is editing this file in the mike_python_tweaks branch
 
+# Note to Mike & Jon: let's distinguish external libraries (e.g., google) from internal (e.g., packet_decoder)
 from __future__ import print_function
 import argparse
 import signal

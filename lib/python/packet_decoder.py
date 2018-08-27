@@ -26,7 +26,7 @@ def decode(packet_hex_string):
     'z_acc': _compute_acceleration(hex_z_acc)
   }
 
-
+# where do we use this? i don't think i've seen this
 def each_slice(size, iterable):
     """ Chunks the iterable into size elements at a time, each yielded as a list.
 
@@ -48,15 +48,15 @@ def each_slice(size, iterable):
     if current_slice:
         yield current_slice
 
-
+# super important since fujitsu bytes need flipping
 def _flip_bytes(hex_bytes):
   return ''.join(map(lambda pr: ''.join(pr), each_slice(2, list(hex_bytes)))[::-1])
 
-
+# formula provided by fujitsu
 def _compute_temperature(hex_temperature):
   return (((_unpack_value(_flip_bytes(hex_temperature)) / 333.87) + 21.0) * 9.0 / 5.0) + 32
 
-
+# formula provided by fujitsu
 def _compute_acceleration(hex_accel):
   return _unpack_value(_flip_bytes(hex_accel)) / 2048.0
 

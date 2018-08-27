@@ -3,7 +3,8 @@ import google.api_core.exceptions as exceptions
 import time
 import six
 
-
+# We originally had the Hub interact with BigQuery 
+# but we've disabled this by default. We don't really use this code. 
 class GoogleBigQuery:
   def __init__(self, project_id, credentials_file,  dataset_name, table_name, logger=None):
     self.project_id = project_id
@@ -71,12 +72,13 @@ class GoogleCloudStorage:
 
   def _generate_filename(self):
     filename = "%s-%f" % (self.hub_id, time.time())
+    # we declare the file name here. it only uses Hub ID, but could add more info.
     return "/".join([self.base_directory, time.strftime("%Y/%m/%d"), filename])
 
   def _bucket(self):
     return self._client().get_bucket(self.bucket_name)
 
-
+# why do we have this class? we output in this format with the -v option, but never to Google Cloud (i thought)
 class GoogleCloudCSVStorage(GoogleCloudStorage):
 
   HEADERS = ['hub_id', 'tag_id', 'temperature', 'x_acc', 'y_acc', 'z_acc',  'rssi', 'timestamp']
@@ -105,7 +107,7 @@ class GoogleCloudCSVStorage(GoogleCloudStorage):
   def _generate_filename(self):
     return GoogleCloudStorage._generate_filename(self) + ".csv"
 
-
+# we don't (?) use this class because it's for BiqQuery which we're not using
 class GoogleCsvUploader():
   def __init__(self, project_id, credentials_file, hub_id, bucket_name, directory, dataset_name, table_name, **kwargs):
     self.project_id = project_id
