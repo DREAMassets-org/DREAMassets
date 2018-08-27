@@ -23,6 +23,8 @@ import argparse
 import sys
 import json
 import pdb
+import traceback
+
 sys.path.insert(0, 'lib/python')
 
 from google_cloud import GoogleCsvUploader
@@ -74,7 +76,9 @@ def main():
             processor.addMeasurement(data)
         except ValueError:
             # skip if we can't decode
-            logger.warn("Unable to parse input line [%s]", line)
+            msg = "Unable to parse input line [%s]" % line.strip()
+            logger.warn(msg)
+            print(msg, file=sys.stderr)
             pass
 
     processor.flush()
