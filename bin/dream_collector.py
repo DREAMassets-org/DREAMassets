@@ -144,12 +144,8 @@ class DreamCollector():
         self.processor and self.processor.flush()
         sys.exit(0)
 
-    def run(self):
-        uploader = None
-
-        self.logger.info("Start scanning")
-        print("Scanning for Fujitsu Packets...")
-
+    def timed_scan_and_flush(scan_time):
+        self.logger.debug("Scan for %d seconds..." % scan_time)
         # The code below `scanner.scan()` is very much like
         #
         # while packet = scan_for_packet
@@ -157,14 +153,23 @@ class DreamCollector():
         # end
         #
         # expect bluepy built it using eventing and callbacks
+        self.scanner.scan(scan_time)
+        self.logger.debug("done")
+        self.logger.debug("Flushing packets...")
+        self.processor.flush()
+
+    def run(self):
+        uploader = None
+
+        self.logger.info("Start scanning")
+        print("Scanning for Fujitsu Packets...")
+
         scan_time = self.options.time_per_scan
         try:
+            self.logger.debug("Sanity check scan for 10 seconds...")
+            self.timed_scan_and_flush(10)
             while True:
-                self.logger.debug("Scan for %d seconds..." % scan_time)
-                self.scanner.scan(scan_time)
-                self.logger.debug("scanner off")
-                self.logger.debug("Flushing packets...")
-                self.processor.flush()
+                self.timed_scan_and_flush(scan_time)
         except btle.BTLEException as ex:
             # What does this mean? "with exception"?
             backtrace = traceback.format_exc()
