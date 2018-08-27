@@ -176,7 +176,6 @@ class DreamCollector():
         finally:
             self.logger.info("Flushing remaining measurements")
             self.processor.flush()
-            traceback.print_exc(sys.stderr)
         self.logger.info("Done scanning")
 
 def main():
@@ -234,7 +233,7 @@ def main():
 
     collector = DreamCollector(arg, env, logger=logger)
     if arg.daemonize:
-        logger.info("Daemonizing the colletor 😈")
+        logger.info("Daemonizing the collector 😈")
 
         with daemon.DaemonContext(
                 working_directory=".",
