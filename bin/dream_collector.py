@@ -8,6 +8,9 @@
 # packets, bundle those into CSVs and send them to Google Cloud Storage.
 #
 # Mike is editing this file in the mike_python_tweaks branch
+# Mike added comments to the library and validated they worked by running them on setit
+# Mike is now about to change the code
+# why isn't this change catching in git status? because I was in setit, not on my laptop :)
 
 # Note to Mike & Jon: let's distinguish external libraries (e.g., google) from internal (e.g., packet_decoder)
 from __future__ import print_function
