@@ -22,6 +22,7 @@ import sys
 import os
 import json
 import re
+import traceback
 from bluepy import btle
 
 sys.path.insert(0, 'lib/python')
@@ -61,8 +62,8 @@ class ScanFujitsu(btle.DefaultDelegate):
         #
         # Here we're using `bluepy` which takes that data and does a bit of processing to give us
         # rssi, and tag_id (which it calls `addr`) and a slightly parsed version of the rest.
-        # For details check out: 
-        # https://ianharvey.github.io/bluepy-doc/scanentry.html 
+        # For details check out:
+        # https://ianharvey.github.io/bluepy-doc/scanentry.html
         #
         # For the first packet listed above as a python ScanEntry() class (from bluepy)
         # you might see something like the following
@@ -107,7 +108,7 @@ class ScanFujitsu(btle.DefaultDelegate):
             # includes temp/acceleration (assuming it's a Fujitsu packet)
             return scan_data_hash.get('Manufacturer', '')
         except (UnicodeEncodeError, UnicodeDecodeError):
-            # there's a bug where this error detector flags an unknown device for an unknown reason. 
+            # there's a bug where this error detector flags an unknown device for an unknown reason.
             # for now we're leaving it alone, but it might be important eventually
             msg = "Failed to extract packet data from device %s" % packet.addr
             self.logger and self.logger.error(msg)
@@ -116,7 +117,7 @@ class ScanFujitsu(btle.DefaultDelegate):
             return ''
 
 
-class DreamScanner():
+class DreamCollector():
 
     def __init__(self, options, env, **kwargs):
         self.options = options
@@ -143,7 +144,7 @@ class DreamScanner():
         self.processor and self.processor.flush()
         sys.exit(0)
 
-    def scan(self):
+    def run(self):
         uploader = None
 
         self.logger.info("Start scanning")
@@ -156,21 +157,26 @@ class DreamScanner():
         # end
         #
         # expect bluepy built it using eventing and callbacks
+        scan_time = self.options.time_per_scan
         try:
-            self.logger.debug("Sanity check... scan for 10 seconds and push that to Google")
-            self.scanner.scan(10)
-            self.logger.info("Flushing sanity check packets")
-            self.processor.flush()
-            self.scanner.scan(self.options.timeout)
+            while True:
+                self.logger.debug("Scan for %d seconds..." % scan_time)
+                self.scanner.scan(scan_time)
+                self.logger.debug("scanner off")
+                self.logger.debug("Flushing packets...")
+                self.processor.flush()
         except btle.BTLEException as ex:
             # What does this mean? "with exception"?
-            print("Scanning failed with exception", file=sys.stderr)
-            print(ex, file=sys.stderr)
-            self.logger.fatal("Scanning stopped with exception")
-            self.logger.fatal(ex)
+            backtrace = traceback.format_exc()
+            msg = "Scanning failed with exception"
+            print(msg, file=sys.stderr)
+            print(backtrace, file=sys.stderr)
+            self.logger.fatal(msg)
+            self.logger.fatal(backtrace)
         finally:
             self.logger.info("Flushing remaining measurements")
             self.processor.flush()
+            traceback.print_exc(sys.stderr)
         self.logger.info("Done scanning")
 
 def main():
@@ -180,9 +186,9 @@ def main():
     # https://www.jaredwolff.com/blog/get-started-with-bluetooth-low-energy/
     parser.add_argument('-i', '--hci', action='store', type=int, default=0,
                         help='Interface number for scan')
-    # how does timeout work? is it a timer that ends or a time period that repeats? 
-    parser.add_argument('-t', '--timeout', action='store', type=int, default=0,
-                        help='Scan delay, 0 for continuous')
+    # how does timeout work? is it a timer that ends or a time period that repeats?
+    parser.add_argument('-t', '--time-per-scan', action='store', type=int, default=10,
+                        help='Number of seconds to scan in between sending/bundling data')
     #how does sensitivity work? -500 seems like a fine default
     parser.add_argument('-s', '--sensitivity', action='store', type=int, default=-500,
                         help='dBm value for filtering far devices')
@@ -193,11 +199,11 @@ def main():
     parser.add_argument('--big-query-update', action='store_true', help="Enable the BigQuery update notification after new data has been sent to Google. Default: false")
     # scan-only is useful in debugging. Must be used with verbose -v mode so you can see the output
     parser.add_argument('-S', '--scan-only', action='store_true', help="Scan only.  Don't upload any data.  Should be used with -v option")
-    # log level is useful in debugging 
+    # log level is useful in debugging
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
     # in steady-state operation, be sure to daemonize the process so that it doesn't fail
     # daemonizing allows the script to run in the background. to see it's running:
-    # ps -ef | grep python 
+    # ps -ef | grep python
     parser.add_argument('-d', '--daemonize', action='store_true',
                         help='Run as a daemon in the background')
     # verbose mode shows the output on the terminal screen. super helpful.
@@ -211,6 +217,13 @@ def main():
     logger.info("Running with args: %s" % arg)
     logger.info("Current Environment: %s" % env)
 
+    if arg.time_per_scan < 5:
+        print("***", file=sys.stderr)
+        print("*** Your time-per-scan must be at least 5 seconds", file=sys.stderr)
+        print("***", file=sys.stderr)
+        parser.print_help()
+        exit(1);
+
     if arg.verbose:
         print("Command-line arguments:")
         print(repr(arg))
@@ -219,31 +232,30 @@ def main():
         print(repr(env))
         print
 
-    scanner = DreamScanner(arg, env, logger=logger)
-    # how does this `scanner` relate to self.scanner.scan in DreamScanner? 
+    collector = DreamCollector(arg, env, logger=logger)
     if arg.daemonize:
-        logger.info("Daemonizing the process 😈")
+        logger.info("Daemonizing the colletor 😈")
 
         with daemon.DaemonContext(
                 working_directory=".",
                 files_preserve=logging_system.file_descriptors(),
                 signal_map={
-                    signal.SIGINT: scanner.shutdown,
-                    signal.SIGHUP: scanner.shutdown,
-                    signal.SIGTERM: scanner.shutdown,
-                    signal.SIGTSTP: scanner.shutdown
+                    signal.SIGINT: collector.shutdown,
+                    signal.SIGHUP: collector.shutdown,
+                    signal.SIGTERM: collector.shutdown,
+                    signal.SIGTSTP: collector.shutdown
                 },
                 pidfile=lockfile.FileLock('dream_collector.pid')):
-            scanner.scan()
+            collector.run()
     else:
         # register interrupt handler
-        signal.signal(signal.SIGINT, scanner.shutdown)
-        signal.signal(signal.SIGHUP, scanner.shutdown)
-        signal.signal(signal.SIGTERM, scanner.shutdown)
-        signal.signal(signal.SIGTSTP, scanner.shutdown)
+        signal.signal(signal.SIGINT, collector.shutdown)
+        signal.signal(signal.SIGHUP, collector.shutdown)
+        signal.signal(signal.SIGTERM, collector.shutdown)
+        signal.signal(signal.SIGTSTP, collector.shutdown)
 
-        scanner.scan()
+        collector.run()
 
-# what does this do? 
+# what does this do?
 if __name__ == "__main__":
     main()

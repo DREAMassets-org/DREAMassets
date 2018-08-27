@@ -11,7 +11,7 @@ class FujitsuPacketProcessor():
     fujitsu_packet_regex = re.compile(r'010003000300')
     # re.compile compiles a regular expression pattern into a regular expression object
     # https://docs.python.org/2/library/re.html
-    # kwargs means keyword argument 
+    # kwargs means keyword argument
     def __init__(self, opts, uploader, **kwargs):
         self.bundle = []
         self.opts = opts
@@ -21,9 +21,6 @@ class FujitsuPacketProcessor():
     def addMeasurement(self, measurement):
         measurement.update({'timestamp': time.time()})
         self.bundle.append(measurement)
-        # This is where we add a packet and upload if we hit bundle size
-        if (len(self.bundle) >= self.opts.bundle_size):
-            self.upload_and_reset()
 
     def flush(self):
         self.upload_and_reset()
@@ -32,3 +29,5 @@ class FujitsuPacketProcessor():
         if (len(self.bundle) > 0):
             self.uploader and self.uploader.package_and_upload(self.bundle)
             self.bundle = []
+        else:
+            self.logger.warn("Nothing to upload")
