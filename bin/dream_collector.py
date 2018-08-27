@@ -47,10 +47,11 @@ class ScanFujitsu(btle.DefaultDelegate):
     def handleDiscovery(self, packet, _unused_isNewDevice, _unused_isNewData):
 
         if packet.rssi < self.opts.sensitivity:
+            # what is the sensitivity threshold we're using? why have a threshold at all?
             return
 
         # The data packets come from the Fujitsu tags and arrive in this format (without spaces).
-        # Here's real sample data for three Fujitsu beacons:
+        # Here's real sample data for three Fujitsu beacons (spaces added for readability):
         #  1               2                     3                         4   5    6    7   8
         # 043E2102010301 1C0CB35CBBD5 15 0201 04 11FF5900 0100 0300 0300 7F03 A503 C4FF A907 C3
         # 043E2102010301 F2461FBDA1D4 15 0201 04 11FF5900 0100 0300 0300 4C03 6100 BDFF 0F08 CA
@@ -60,7 +61,8 @@ class ScanFujitsu(btle.DefaultDelegate):
         #
         # Here we're using `bluepy` which takes that data and does a bit of processing to give us
         # rssi, and tag_id (which it calls `addr`) and a slightly parsed version of the rest.
-        # Check out https://ianharvey.github.io/bluepy-doc/scanentry.html for details
+        # For details check out: 
+        # https://ianharvey.github.io/bluepy-doc/scanentry.html 
         #
         # For the first packet listed above as a python ScanEntry() class (from bluepy)
         # you might see something like the following
@@ -77,8 +79,10 @@ class ScanFujitsu(btle.DefaultDelegate):
         # in dBm's
 
         packet_payload = self.extract_packet_payload(packet)
-        # if the packet matches a fujitsu packet
+        # if the packet matches a fujitsu packet, i.e., has the regex 010003000300
         if re.search(self.fujitsu_packet_regex, packet_payload):
+            # We transform a `packet` with meaningless binary values (0x0123)
+            # into a `measurement` with meaningful decimal values (72 degF)
             measurement = {
                 'tag_id': packet.addr.replace(':', ''),
                 'rssi': packet.rssi,
@@ -87,7 +91,9 @@ class ScanFujitsu(btle.DefaultDelegate):
             # Add acceleration/temperature data which we've decoded from payload to measurement
             measurement.update(packet_decoder.decode(packet_payload))
             # add measurement to our processor
+            # why do we have a processor? what does it do exactly? why does it do the uploading?
             self.processor.addMeasurement(measurement)
+            # if we're running in verbose mode -v, then output the json of the measurement
             if self.opts.verbose:
                 print (json.dumps(measurement))
 
@@ -101,6 +107,8 @@ class ScanFujitsu(btle.DefaultDelegate):
             # includes temp/acceleration (assuming it's a Fujitsu packet)
             return scan_data_hash.get('Manufacturer', '')
         except (UnicodeEncodeError, UnicodeDecodeError):
+            # there's a bug where this error detector flags an unknown device for an unknown reason. 
+            # for now we're leaving it alone, but it might be important eventually
             msg = "Failed to extract packet data from device %s" % packet.addr
             self.logger and self.logger.error(msg)
             if self.opts.verbose:
@@ -155,6 +163,7 @@ class DreamScanner():
             self.processor.flush()
             self.scanner.scan(self.options.timeout)
         except btle.BTLEException as ex:
+            # What does this mean? "with exception"?
             print("Scanning failed with exception", file=sys.stderr)
             print(ex, file=sys.stderr)
             self.logger.fatal("Scanning stopped with exception")
@@ -166,19 +175,32 @@ class DreamScanner():
 
 def main():
     parser = argparse.ArgumentParser()
+    # the -i argument specifies the HCI (Host Controller Interface)
+    # the project uses hci0 and hci1 (???)
+    # https://www.jaredwolff.com/blog/get-started-with-bluetooth-low-energy/
     parser.add_argument('-i', '--hci', action='store', type=int, default=0,
                         help='Interface number for scan')
+    # how does timeout work? is it a timer that ends or a time period that repeats? 
     parser.add_argument('-t', '--timeout', action='store', type=int, default=0,
                         help='Scan delay, 0 for continuous')
+    #how does sensitivity work? -500 seems like a fine default
     parser.add_argument('-s', '--sensitivity', action='store', type=int, default=-500,
                         help='dBm value for filtering far devices')
+    #maybe increase the default bundle size to 1000?
     parser.add_argument('-b', '--bundle-size', type=int,
                         help='Number of measurements to send in each bundle', default=100)
+    # always leave this off
     parser.add_argument('--big-query-update', action='store_true', help="Enable the BigQuery update notification after new data has been sent to Google. Default: false")
+    # scan-only is useful in debugging. Must be used with verbose -v mode so you can see the output
     parser.add_argument('-S', '--scan-only', action='store_true', help="Scan only.  Don't upload any data.  Should be used with -v option")
+    # log level is useful in debugging 
     parser.add_argument('-l', '--log-level', action="store", help="Specify logging level (DEBUG, INFO, WARN, ERROR, FATAL)", default="INFO")
+    # in steady-state operation, be sure to daemonize the process so that it doesn't fail
+    # daemonizing allows the script to run in the background. to see it's running:
+    # ps -ef | grep python 
     parser.add_argument('-d', '--daemonize', action='store_true',
                         help='Run as a daemon in the background')
+    # verbose mode shows the output on the terminal screen. super helpful.
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Increase output verbosity')
     arg = parser.parse_args(sys.argv[1:])
@@ -221,5 +243,6 @@ def main():
 
         scanner.scan()
 
+# what does this do? 
 if __name__ == "__main__":
     main()
