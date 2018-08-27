@@ -220,6 +220,7 @@ def main():
         print
 
     scanner = DreamScanner(arg, env, logger=logger)
+    # how does this `scanner` relate to self.scanner.scan in DreamScanner? 
     if arg.daemonize:
         logger.info("Daemonizing the process 😈")
 
