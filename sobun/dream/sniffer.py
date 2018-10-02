@@ -1,8 +1,13 @@
+from __future__ import print_function
+
 import re
+import sys
+import signal
 
 from bluepy.btle import Scanner, DefaultDelegate
 
 from dream.syncer import push
+
 
 # from ScanEntry in https://ianharvey.github.io/bluepy-doc/index.html
 # 
@@ -55,9 +60,31 @@ class ScanDelegate(DefaultDelegate):
         if payload:
             if is_fujitsu_tag(payload):
                 push.delay(payload)
+                print('push to the queue')
+
+
+def looper(scanner):
+    scanner.clear()
+    scanner.start()
+    def stop_scan(signum, frame):
+        scanner.stop()
+        sys.exit(0)
+
+    signal.signal(signal.SIGHUP, stop_scan)
+    signal.signal(signal.SIGINT, stop_scan)
+    signal.signal(signal.SIGTERM, stop_scan)
+    signal.signal(signal.SIGTSTP, stop_scan)
+
+    while True:
+        scanner.process()
 
 
 if __name__ == '__main__':
-    handler = ScanDelegate()
-    scanner = Scanner().withDelegate(handler)
-    scanner.scan(11)
+    # hci = sys.argv[1]
+    # assert hci_num
+    # TODO get hci from cli arg
+    hci = 0
+
+    delegate = ScanDelegate()
+    scanner = Scanner(hci).withDelegate(delegate)
+    looper(scanner)
