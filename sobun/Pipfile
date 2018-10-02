@@ -9,6 +9,7 @@ name = "pypi"
 redis = "*"
 celery = {version = "*", extras = ["redis"]}
 bluepy = "*"
+docopt = "*"
 
 [requires]
 python_version = "2.7"

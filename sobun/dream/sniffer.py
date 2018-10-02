@@ -78,12 +78,19 @@ def looper(scanner):
     while True:
         scanner.process()
 
+USAGE = """
+Usage: dream.sniffer <hci>
+
+Options:
+    <hci>       The integer of the Bluetooth interface
+    -h --help   Show this screen.
+"""
 
 if __name__ == '__main__':
-    # hci = sys.argv[1]
-    # assert hci_num
-    # TODO get hci from cli arg
-    hci = 0
+    from docopt import docopt
+
+    args = docopt(USAGE)
+    hci = args['<hci>']
 
     delegate = PushDelegate()
     scanner = Scanner(hci).withDelegate(delegate)
