@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+
+[packages]
+redis = "*"
+celery = {version = "*", extras = ["redis"]}
+bluepy = "*"
+
+[requires]
+python_version = "2.7"
