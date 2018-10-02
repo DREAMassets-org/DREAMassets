@@ -51,7 +51,7 @@ def is_fujitsu_tag(payload):
     return re.search(FUJITSU_PACKET_REGEX, payload['measurements'])
 
 
-class ScanDelegate(DefaultDelegate):
+class PushDelegate(DefaultDelegate):
     def __init__(self):
         DefaultDelegate.__init__(self)
 
@@ -85,6 +85,6 @@ if __name__ == '__main__':
     # TODO get hci from cli arg
     hci = 0
 
-    delegate = ScanDelegate()
+    delegate = PushDelegate()
     scanner = Scanner(hci).withDelegate(delegate)
     looper(scanner)
