@@ -82,6 +82,7 @@ def looper(scanner):
     while True:
         scanner.process()
 
+# this is for docopt. Note that the "<hci>" means something to docopt
 USAGE = """
 Usage: dream.sniffer <hci>
 
@@ -90,12 +91,18 @@ Options:
     -h --help   Show this screen.
 """
 
+# this is the entry point to the code. __name and __main are the python hooks to run the code 
 if __name__ == '__main__':
     from docopt import docopt
 
     args = docopt(USAGE)
     hci = args['<hci>']
 
+    #the delegate gets the BLE advertising packets from the scanner 
     delegate = PushDelegate()
+
+    #the scanner receives the BLE advertising packets and delivers them to the delegate 
     scanner = Scanner(hci).withDelegate(delegate)
+
+    # looper just scans forever and ever amen. 
     looper(scanner)
