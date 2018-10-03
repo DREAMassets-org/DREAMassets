@@ -13,3 +13,4 @@ secrets/credentials.json
 # vi/emacs temp files
 \#*
 \*~
+venv
