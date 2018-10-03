@@ -62,19 +62,23 @@ class PushDelegate(DefaultDelegate):
                 push.delay(payload)
                 print('push to the queue')
 
-
+# scan continuously
 def looper(scanner):
-    scanner.clear()
-    scanner.start()
+
+    # stop the scan on an interrupt
     def stop_scan(signum, frame):
         scanner.stop()
         sys.exit(0)
 
+    # define interrupts
     signal.signal(signal.SIGHUP, stop_scan)
     signal.signal(signal.SIGINT, stop_scan)
     signal.signal(signal.SIGTERM, stop_scan)
     signal.signal(signal.SIGTSTP, stop_scan)
 
+    # start the scan 
+    scanner.clear()
+    scanner.start()
     while True:
         scanner.process()
 
