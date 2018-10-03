@@ -126,16 +126,10 @@ redis-cli llen celery
 You'll probably want to watch the queue filling with packets so run:
 
 ``` 
-watch redis-cli llen celery 
+watch -n0.2 redis-cli llen celery 
 ```
 
-By default, `watch` runs a command every 2 seconds. To set the time interval of your choosing use:
-``` 
-watch -n1 redis-cli llen celery 
-```
-
-Where `-n1` is 1 second intervals -- change however you'd like. 
-
+By default, `watch` runs a command every 2 seconds. Use `-n` to set the time interval of your choosing. 
 
 
 ----------------------
