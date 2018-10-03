@@ -10,6 +10,7 @@ redis = "*"
 celery = {version = "*", extras = ["redis"]}
 bluepy = "*"
 docopt = "*"
+uwsgi = "*"
 
 [requires]
 python_version = "2.7"

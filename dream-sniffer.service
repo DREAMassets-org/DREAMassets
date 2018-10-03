@@ -1,0 +1,20 @@
+[Unit]
+Description=dream-sniffer
+After=bluetooth.service
+
+[Service]
+User=root
+Type=simple
+WorkingDirectory=/home/pi/DREAMassets/sobun
+Environment=PORT=%i
+ExecStart=/bin/bash -c 'exec ./venv/bin/python -m dream.sniffer 0'
+Restart=always
+StandardInput=null
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=%n
+KillMode=mixed
+TimeoutStopSec=5
+
+[Install]
+WantedBy=default.target

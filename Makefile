@@ -1,2 +1,2 @@
 sync:
-	rsync -ruvz pi:DREAMassets/sobun/* sobun
+	rsync -ruvz --exclude=venv pi:DREAMassets/sobun/* sobun
