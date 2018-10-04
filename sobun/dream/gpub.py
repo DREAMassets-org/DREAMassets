@@ -1,0 +1,39 @@
+from __future__ import print_function
+
+import json
+
+from google.cloud import pubsub
+from google.cloud.pubsub import types
+
+
+
+topic = "projects/dream-assets-project/topics/tags-dev"
+publisher = pubsub.PublisherClient(
+        batch_settings=types.BatchSettings(max_messages=50),
+)
+
+
+def send_data(packet):
+    payload = clean(packet)
+    future = publisher.publish(topic, payload)
+    print("sending payload: ", payload) 
+    msg_id = future.result()
+
+
+def clean(packet):
+    # TODO payload must be bytestring
+    payload = json.dumps(packet)
+    # type(payload) == 'str'
+    return payload
+
+
+if __name__ == "__main__":
+    tag_id = 1
+    while True:
+        tag_id += 1
+        packet = {
+            "tag_id": tag_id,
+            "rssi": 2,
+            "mfr_data": "foobarhexcode"  
+        }
+        send_data(packet)
