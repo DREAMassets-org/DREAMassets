@@ -3,14 +3,14 @@
 # third party library
 from celery import Celery
 
-# our project DREAM library
-from dream.gpub import send_data
-
 app = Celery('scanner', broker='redis://localhost:6379')
 
 
 @app.task
 def push(packet):
-    # publish packet data to Google's pubsub
+    # Publish packet data to Google's PubSub
+
+    # Lazy import send_data so only the Celery workers need Google Authz
+    from dream.gpub import send_data
+
     send_data(packet)
-    return 'push packet into the queue'
