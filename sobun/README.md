@@ -131,6 +131,78 @@ watch -n0.2 redis-cli llen celery
 
 By default, `watch` runs a command every 2 seconds. Use `-n` to set the time interval of your choosing. 
 
+----------------------
+
+## Setup Soracom
+
+Setup an APN (Access Point Name) for the SORACOM SIM to connect to the SORACOM mobile network
+
+```
+sudo nmcli con add type gsm ifname "*" con-name soracom apn soracom.io user sora password sora  
+```
+This should give you a response like `Connection 'soracom' (3cbecb73-2f6c-48f9-819a-3e233408d4a0) successfully added.`
+
+Plug in your USB dongle with Soracom SIM card. You should have already registered the SIM card with Soracom.
+
+Restart your Hub.
+
+```  
+sudo reboot
+```  
+
+Wait for the USB light to flash green and then SSH back into the Pi.  Wait for the light on the SORACOM to go blue and check whether `ifconfig` shows `ppp0` by running the command:
+```  
+ifconfig
+```  
+
+_Debug_: If you have trouble SSH'ing into your Hub using `ssh pi@sueno.local` you can use the LAN IP address -- in the example above that's `inet 10.4.8.68`. So you could `ssh pi@10.4.8.68`.  There's a mapping from `sueno.local` to `10.4.8.68` that sometimes breaks, so by going direct to IP address, you can work around the problem.  
+
+Run the following commands to grab and execute Soracom's helper script. This will make Soracom cell the default internet connection on your Hub.
+
+Go to the directory with the soracom file:
+
+```  
+cd ~/DREAMassets/soracom
+```  
+
+Copy the `ppp_route_metric` script to the RasPi startup directory
+
+```  
+sudo cp 90.set_ppp_route_metric /etc/NetworkManager/dispatcher.d/
+```  
+
+Make the file executable
+
+```  
+sudo chmod +x /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric
+```  
+
+Run Soracom's file:
+ 
+```  
+sudo /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric ppp0 up
+```  
+
+Restart your Hub.
+
+```  
+sudo reboot
+```  
+
+SSH back into your Hub and check the routing table, where `ppp0` should be at the top (once the USB has a solid blue light, indicating a Soracom connection).
+
+```  
+route -n
+```  
+
+Last, to double check, run a `traceroute` to make sure the first hop is Soracom's AWS server in Europe:
+
+```  
+traceroute fast.com
+```  
+
+Congrats :tada: Happy cell connectivity!  
+
 
 ----------------------
 
