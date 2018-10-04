@@ -14,3 +14,4 @@ secrets/credentials.json
 \#*
 \*~
 venv
+**/*.pid
