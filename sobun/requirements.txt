@@ -1,7 +1,6 @@
 -i https://pypi.org/simple
 amqp==2.3.2
 billiard==3.5.0.4
-bluepy==1.2.0
 celery==4.2.1
 docopt==0.6.2
 kombu==4.2.1
