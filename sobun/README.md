@@ -82,29 +82,40 @@ Close the git repo:
 git clone...
 ```  
 
-Install redis: 
+Install redis, the queuing package: 
 ```
 sudo apt-get install redis-server -y 
 ```  
 
-Go into the directory where you're going to run the script (in our case `sobun`) since you're about to create an important subdirectory. Install virtualenv and activate it:
+Install virtualenv, the virtual environment package:
 
 ```  
 sudo pip install virtualenv   
 ```  
+
+
+Go into the directory where you're going to run the script (in our case `sobun`) since you're about to create an important subdirectory. Install virtualenv in the `venv` subfolder:
+
 ```  
 virtualenv venv
 ```  
+
+Activate virtualenv:
+
 ```  
 source venv/bin/activate   
 ```  
+
 This should add (venv) to the prompt so it now looks something like: `(venv) pi@sueno:~/DREAMassets/sobun $`  
+
+_Debug_: If you need to turn off `venv` just enter the command `deactivate`. 
 
 Install the requirements for python:
 
 ```  
  pip install -r requirements.txt
 ```  
+_Debug:_ If you try to install requirements without `virtualenv`, don't worry because it'll fail. (you'd need to have used `sudo`). Just `activate` and install again.
 
 Congrats! :tada: you're now ready to run the python scrips.  For the primary sniffing script in the `dream` directory, run:
 
