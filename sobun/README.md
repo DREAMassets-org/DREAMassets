@@ -98,11 +98,7 @@ virtualenv venv
 ```  
 source venv/bin/activate   
 ```  
-This should add (venv) to the prompt so it now looks something like:
-
-```  
-(venv) pi@sueno:~/DREAMassets/sobun $
-```  
+This should add (venv) to the prompt so it now looks something like: `(venv) pi@sueno:~/DREAMassets/sobun $`  
 
 Install the requirements for python:
 
