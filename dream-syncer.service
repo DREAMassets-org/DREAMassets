@@ -1,6 +1,8 @@
 [Unit]
 Description=dream-syncer
-After=network.target
+After=network-online.target
+Requires=network-online.target
+
 
 [Service]
 User=pi
@@ -17,4 +19,4 @@ KillMode=mixed
 TimeoutStopSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
