@@ -1,11 +1,13 @@
 from __future__ import print_function
 
 import json
+import socket
 
 from google.cloud import pubsub
 from google.cloud.pubsub import types
 
 
+HUB_ID = socket.gethostname()
 
 topic = "projects/dream-assets-project/topics/tags-dev"
 publisher = pubsub.PublisherClient(
@@ -21,9 +23,13 @@ def send_data(packet):
 
 
 def clean(packet):
-    # TODO payload must be bytestring
+    # NOTE payload must be bytestring
+
+    # We add metadata here so we don't have change the schema of the "queue"
+    # packet for celery
+    packet['hub_id'] = HUB_ID
+
     payload = json.dumps(packet)
-    # type(payload) == 'str'
     return payload
 
 
@@ -32,8 +38,9 @@ if __name__ == "__main__":
     while True:
         tag_id += 1
         packet = {
-            "tag_id": tag_id,
-            "rssi": 2,
-            "mfr_data": "foobarhexcode"  
+                "hub_id": HUB_ID,
+                "tag_id": tag_id,
+                "rssi": 2,
+                "mfr_data": "foobarhexcode"  
         }
         send_data(packet)

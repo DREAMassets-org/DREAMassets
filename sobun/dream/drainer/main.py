@@ -25,11 +25,12 @@ def run(data, context):
     # data['data'] is somehow base64 encoded 
     payload = base64.b64decode(data['data']).decode('utf-8')
     row = json.loads(payload)
+    hub_id = row.get('hub_id', None)
     tag_id  = row['tag_id']
     mfr_data = row['mfr_data']
 
     rows = [
-            (tag_id, mfr_data)
+            (tag_id, mfr_data, hub_id)
     ]
 
     errors = client.insert_rows(table, rows)
