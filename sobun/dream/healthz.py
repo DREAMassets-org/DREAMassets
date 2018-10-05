@@ -25,6 +25,7 @@ if __name__ == "__main__":
         print("")
         for row in rows:
             if row.hub_id is not None:
-                print("{hub_id: <15} {count}".format(hub_id=row.hub_id, count =row.count))
-        
+                print("{hub_id: <15} {count}".format(
+                    hub_id=row.hub_id, count=row.count))
+
         sleep(1)
