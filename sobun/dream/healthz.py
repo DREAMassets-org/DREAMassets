@@ -19,13 +19,20 @@ table_ref = client.dataset(dataset_id).table(table_id)
 table = client.get_table(table_ref)
 
 if __name__ == "__main__":
+    first_counts = {}
     while True:
         job = client.query(query)
         rows = job.result()
         print("")
         for row in rows:
             if row.hub_id is not None:
-                print("{hub_id: <15} {count}".format(
-                    hub_id=row.hub_id, count=row.count))
+                fcount = first_counts.get(row.hub_id, None)
+                if not fcount:
+                    fcount = row.count
+                    first_counts[row.hub_id] = row.count
+
+                delta = row.count - fcount
+                print("{hub_id: <15} {delta: <15} {count: <15}".format(
+                    hub_id=row.hub_id, count=row.count, delta=delta))
 
         sleep(1)
