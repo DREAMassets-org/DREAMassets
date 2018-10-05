@@ -74,7 +74,7 @@ desc: Manufacturer
 value: 750042040180607c6456361fd97e6456361fd801000000000000
 ```
 
-## Runing the python script
+## Running the python script
 DREAM's python screen needs `redis` and `virtualenv` to run properly.  Here's the setup:
 
 Close the git repo:
@@ -137,6 +137,74 @@ watch -n0.2 redis-cli llen celery
 ```
 
 By default, `watch` runs a command every 2 seconds. Use `-n` to set the time interval of your choosing. 
+
+
+
+----------------------
+
+### Misc notes and UNIX commands
+
+Purge celery when there's lots of old data in the queue bc that can screw up Google Cloud.  Note that you need to be in the virtualenv, as shown by `venv`. A simple `purge celery` doesn't work, you need to specify: 
+ 
+```  
+celery purge -A dream.syncer -f
+```  
+
+DREAM uses `systemctl` to control the services that sniff BLE advertisements (`bleAdvertisement`) and sync payloads (`payload`) to Google Cloud via PubSub.   
+
+Check the status of the DREAM services:
+
+```  
+sudo systemctl | grep dream
+```  
+
+Stop the `dream-syncer.service` service: 
+
+```  
+sudo systemctl stop dream-syncer.service 
+```  
+
+Start the service: 
+
+```  
+sudo systemctl start dream-syncer.service 
+```  
+
+Restart the service: 
+
+```  
+sudo systemctl restart dream-syncer.service 
+```  
+
+
+View the `.envrc` file that shows where to find credentials for Google Cloud:
+
+```  
+cat ~/repo/dream.git/sobun/.envrc
+```  
+Which returns: `export GOOGLE_APPLICATION_CREDENTIALS="./google-credentials.secret.json"`
+
+We looked at system files `networking.service` and `NetworkManager-wait-online.service` in:
+
+```  
+cd /etc/systemd/system/network-online.target.wants/
+```  
+
+We run the daemonizer as a shell script: 
+
+```  
+cd ~/repo/dream.git/
+./daemonize.sh 
+```  
+
+
+
+```  
+
+```  
+
+
+
 
 ----------------------
 
