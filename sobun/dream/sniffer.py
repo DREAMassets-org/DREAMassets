@@ -19,6 +19,7 @@ from __future__ import print_function
 import re
 import sys
 import signal
+from time import time as now
 
 # Get the bluepy library
 from bluepy.btle import Scanner, DefaultDelegate
@@ -55,6 +56,7 @@ def extract_packet_from_bleAdvertisement(bleAdvertisement):
                 # return this packet
                 "tag_id": tag_id,
                 "rssi": rssi,
+                "timestamp": now(),
                 "mfr_data": values[-1],
             }
         return None
