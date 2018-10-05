@@ -198,12 +198,51 @@ cd ~/repo/dream.git/
 ```  
 
 
+----------------------
 
-```  
+## Hub setup
 
-```  
+Find the RasPi's MAC address (e.g., `aa:bb:cc:11:22:33`) for wifi and record it in the *traits* file. Read the RasPi’s unique MAC address  for wifi `wlan0` [using](https://www.raspberrypi-spy.co.uk/2012/06/finding-the-mac-address-of-a-raspberry-pi/):
 
+```
+cat /sys/class/net/wlan0/address
+```
 
+The output should look like this: 
+
+```
+pi@sueno:~ $
+pi@sueno:~ $ cat /sys/class/net/wlan0/address
+aa:bb:cc:11:22:33
+pi@sueno:~ $
+```
+
+Typically, to SSH into the RasPi, you'll use:
+```
+MacBook:~ user$ 
+MacBook:~ user$ ssh pi@sueno.local
+```
+Sometimes the mapping between `sueno.local` and `aa:bb:cc:11:22:33` breaks.  So, now you can use `arp` to get the MAC address and then SSH in:
+
+```
+MacBook:~ user$ 
+MacBook:~ user$ arp -a | grep aa:bb
+? (10.4.9.121) at 6e:92:77:aa:f0:6f on en0 ifscope [ethernet]
+MacBook:~ user$ 
+MacBook:~ user$ ssh pi@10.4.9.121
+pi@10.4.9.121's password:
+
+Linux sueno 4.14.62-v7+ #1134 SMP Tue Aug 14 17:10:10 BST 2018 armv7l
+
+pi@sueno:~ $
+pi@sueno:~ $ date
+Fri Oct  5 10:57:36 PDT 2018
+pi@sueno:~ $ exit
+logout
+Connection to 10.4.9.121 closed.
+
+MacBook:~ user$ 
+```
 
 
 ----------------------
