@@ -79,8 +79,8 @@ DREAM's python screen needs `redis` and `virtualenv` to run properly.
 
 
 -------------------------
-### for setit and forgetit
-#### these instructions will change after we harden deployment
+## for setit and forgetit
+### these instructions will change after we harden deployment
 
 
 ### Create a secrets folder and put the google credentials inside:
@@ -115,12 +115,23 @@ mv dream-assets-project-aa551100cc66.json google-credentials.secret.json
 
 
 
-### Setup code for DREAM
-from RasPi's home directory, make `~/repo/dream.git/`
-
-**Note to self: Mike to research difference between `root` and `home`
+## Setup code for DREAM
 
 Make `repo` folder:
+
+```
+cd
+```
+```
+mkdir repo
+```
+```
+cd repo
+```
+
+```
+git clone https://github.com/DREAMassets-org/DREAMassets.git
+```
 
 ```
 pi@forgetit:~ $ mkdir repo
@@ -154,10 +165,20 @@ Install packages:
 
 ```
 sudo apt-get install redis-server -y
+```
+```
 sudo pip install virtualenv   
 ```
 
 Create the virtual environment from `sobun` where we run everything:
+
+```
+cd sobun
+```
+
+```
+virtualenv venv
+```
 
 ```
 pi@forgetit:~/repo/dream.git/sobun $ ls
@@ -178,7 +199,9 @@ Install the requirements:
 
 (venv) pi@forgetit:~/repo/dream.git/sobun $ ls
 dream  provision  README.md  README_PI_PROVISION.md  requirements.txt  venv
-(venv) pi@forgetit:~/repo/dream.git/sobun $ pip install -r requirements.txt
+```
+```
+pip install -r requirements.txt
 ```
 
 ##change from previous readme:
@@ -195,10 +218,17 @@ If it's not empty, purge it. Note you need to be in the `sobun` folder, or where
 
 ```
 celery purge -A dream.syncer -f
-
 ```
 
 Go to the `dream.git` folder and run the daemonize script: 
+
+```
+~/repo/dream.git 
+```
+
+```
+./daemonize.sh
+```
 
 
 ```
@@ -215,7 +245,7 @@ Created symlink /etc/systemd/system/multi-user.target.wants/dream-syncer.service
 Go to the `provision/` folder, copy the file to dispatch the script on network change, and make it executable:
 
 ```
-(venv) pi@forgetit:~/repo/dream.git $ cd sobun/provision/
+cd sobun/provision/
 ```
 
 ```
@@ -275,6 +305,7 @@ Check on the syncer daemon service:
 ```
 sudo systemctl status dream-syncer.service
 ```
+Click `q` to exit the screen.
 
 Use the `watch` command to see the service send each packet:
 ```
