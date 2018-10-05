@@ -117,6 +117,12 @@ mv dream-assets-project-aa551100cc66.json google-credentials.secret.json
 
 ## Setup code for DREAM
 
+Check what's running -- we're daemonizing, so we need to explicitly look! 
+
+```
+ps -ef | grep pyth
+```
+
 Make `repo` folder:
 
 ```
