@@ -314,6 +314,9 @@ watch -n0.5 sudo systemctl status dream-syncer.service
 
 Go look in Google BigQuery and see your data! 
 
+```
+SELECT count(*) FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "ruya";
+```
 
 -------------------------
 
