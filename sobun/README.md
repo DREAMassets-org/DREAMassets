@@ -75,7 +75,219 @@ value: 750042040180607c6456361fd97e6456361fd801000000000000
 ```
 
 ## Running the python script
-DREAM's python screen needs `redis` and `virtualenv` to run properly.  Here's the setup:
+DREAM's python screen needs `redis` and `virtualenv` to run properly.  
+
+
+-------------------------
+### for setit and forgetit
+#### these instructions will change after we harden deployment
+
+
+### Create a secrets folder and put the google credentials inside:
+
+```
+cd
+```
+
+
+```
+mkdir secrets
+```
+
+_From your laptop_
+
+```
+MacBook:Desktop user$ scp dream-assets-project-aa551100cc66.json pi@sueno.local:~/secrets/
+```
+
+
+Back on the RasPi
+```
+cd secrets
+```
+
+```
+ls
+```
+```
+mv dream-assets-project-aa551100cc66.json google-credentials.secret.json
+```
+
+
+
+### Setup code for DREAM
+from RasPi's home directory, make `~/repo/dream.git/`
+
+**Note to self: Mike to research difference between `root` and `home`
+
+Make `repo` folder:
+
+```
+pi@forgetit:~ $ mkdir repo
+pi@forgetit:~ $ cd repo/
+pi@forgetit:~/repo $ git clone https://github.com/DREAMassets-org/DREAMassets.git
+Cloning into 'DREAMassets'...
+```
+
+Rename `DREAMassets` folder:
+
+```
+mv DREAMassets/ dream.git
+```
+
+Switch to the `hardening` branch:
+
+```
+pi@forgetit:~/repo/dream.git $ git branch
+* master
+pi@forgetit:~/repo/dream.git $
+pi@forgetit:~/repo/dream.git $ git checkout hardening
+Branch hardening set up to track remote branch hardening from origin.
+Switched to a new branch 'hardening'
+pi@forgetit:~/repo/dream.git $ git branch
+* hardening
+  master
+pi@forgetit:~/repo/dream.git $
+```
+
+Install packages:
+
+```
+sudo apt-get install redis-server -y
+sudo pip install virtualenv   
+```
+
+Create the virtual environment from `sobun` where we run everything:
+
+```
+pi@forgetit:~/repo/dream.git/sobun $ ls
+dream  provision  README.md  README_PI_PROVISION.md  requirements.txt
+pi@forgetit:~/repo/dream.git/sobun $ virtualenv venv
+New python executable in /home/pi/repo/dream.git/sobun/venv/bin/python
+```
+
+Now activate the `venv`:
+
+```
+source venv/bin/activate
+```
+
+Install the requirements:
+
+```
+
+(venv) pi@forgetit:~/repo/dream.git/sobun $ ls
+dream  provision  README.md  README_PI_PROVISION.md  requirements.txt  venv
+(venv) pi@forgetit:~/repo/dream.git/sobun $ pip install -r requirements.txt
+```
+
+##change from previous readme:
+###we no longer launch the sniffer script directly 
+that was just development purposes
+
+Check the status of the queue
+
+```
+redis-cli llen celery
+```
+
+If it's not empty, purge it. Note you need to be in the `sobun` folder, or wherever you created the queue:
+
+```
+celery purge -A dream.syncer -f
+
+```
+
+Go to the `dream.git` folder and run the daemonize script: 
+
+
+```
+(venv) pi@forgetit:~/repo/dream.git $ ls
+bin              daemonize.sh          dream-sniffer.service  events_report_scheduler  Gemfile       lib   Makefile  README.md  sobun    test
+cloud_functions  dream_dummy_data.csv  dream-syncer.service   example.env.sh           Gemfile.lock  logs  Rakefile  secrets    soracom
+(venv) pi@forgetit:~/repo/dream.git $
+(venv) pi@forgetit:~/repo/dream.git $ ./daemonize.sh
+Created symlink /etc/systemd/system/default.target.wants/dream-sniffer.service → /etc/systemd/system/dream-sniffer.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/dream-syncer.service → /etc/systemd/system/dream-syncer.service.
+(venv) pi@forgetit:~/repo/dream.git $
+```
+
+Go to the `provision/` folder, copy the file to dispatch the script on network change, and make it executable:
+
+```
+(venv) pi@forgetit:~/repo/dream.git $ cd sobun/provision/
+```
+
+```
+sudo cp 95.restart_dream_syncer.sh /etc/NetworkManager/dispatcher.d
+```
+
+```
+sudo chmod +x /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
+```
+
+If you have a question, there're instructions in the file itself:
+
+```
+(venv) pi@forgetit:~/repo/dream.git/sobun/provision $ ls
+95.restart_dream_syncer.sh
+(venv) pi@forgetit:~/repo/dream.git/sobun/provision $ cat 95.restart_dream_syncer.sh
+#!/bin/bash
+
+# Copy this file to this directory: /etc/NetworkManager/dispatcher.d
+# Run: chown root:root /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
+# Run: chmod +x /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
+
+
+IF=$1
+STATUS=$2
+
+logger -s "DREAM: $IF status is now $STATUS"
+systemctl restart dream-syncer.service
+logger -s "DREAM: dream-syncer has been restarted"
+```
+
+Tada :tada: You're now gathering BLE advertisements and sending payloads to the cloud. You can see this by checking the logs for `sniffer` and `syncer`:
+
+```
+ sudo systemctl status dream-sniffer
+```
+Which returns
+
+```
+(venv) pi@forgetit:~/repo/dream.git/sobun/provision $ sudo systemctl status dream-sniffer
+● dream-sniffer.service - dream-sniffer
+   Loaded: loaded (/etc/systemd/system/dream-sniffer.service; enabled; vendor preset: enabled)
+   Active: active (running) since Fri 2018-10-05 11:44:50 PDT; 7min ago
+ Main PID: 3327 (python)
+   CGroup: /system.slice/dream-sniffer.service
+           ├─3327 ./venv/bin/python -m dream.sniffer 0
+           └─3347 /home/pi/repo/dream.git/sobun/venv/local/lib/python2.7/site-packages/bluepy/bluepy-helper 0
+
+Oct 05 11:49:35 forgetit dream-sniffer.service[3327]: push packet to the celery queue
+Oct 05 11:49:35 forgetit dream-sniffer.service[3327]: push packet to the celery queue
+Oct 05 11:51:39 forgetit dream-sniffer.service[3327]: push packet to the celery queue
+(venv) pi@forgetit:~/repo/dream.git/sobun/provision $
+```
+
+Check on the syncer daemon service:
+
+```
+sudo systemctl status dream-syncer.service
+```
+
+Use the `watch` command to see the service send each packet:
+```
+watch -n0.5 sudo systemctl status dream-syncer.service
+```
+
+Go look in Google BigQuery and see your data! 
+
+
+-------------------------
+
+
+Here's the setup:
 
 Close the git repo:
 ```  
