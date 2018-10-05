@@ -6,10 +6,10 @@ Requires=network-online.target
 
 [Service]
 User=pi
-Type=forking
+Type=simple
 WorkingDirectory=/home/pi/repo/dream.git/sobun
 Environment=GOOGLE_APPLICATION_CREDENTIALS=/home/pi/secrets/google-credentials.secret.json
-ExecStart=/bin/bash -c './venv/bin/celery worker -D -A dream.syncer'
+ExecStart=/bin/bash -c 'exec ./venv/bin/celery worker -A dream.syncer'
 Restart=always
 StandardInput=null
 StandardOutput=syslog
