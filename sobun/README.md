@@ -74,7 +74,7 @@ desc: Manufacturer
 value: 750042040180607c6456361fd97e6456361fd801000000000000
 ```
 
-## Runing the python script
+## Running the python script
 DREAM's python screen needs `redis` and `virtualenv` to run properly.  Here's the setup:
 
 Close the git repo:
@@ -82,33 +82,40 @@ Close the git repo:
 git clone...
 ```  
 
-Install redis: 
+Install redis, the queuing package: 
 ```
 sudo apt-get install redis-server -y 
 ```  
 
-Go into the directory where you're going to run the script (in our case `sobun`) since you're about to create an important subdirectory. Install virtualenv and activate it:
+Install virtualenv, the virtual environment package:
 
 ```  
 sudo pip install virtualenv   
 ```  
+
+
+Go into the directory where you're going to run the script (in our case `sobun`) since you're about to create an important subdirectory. Install virtualenv in the `venv` subfolder:
+
 ```  
 virtualenv venv
 ```  
+
+Activate virtualenv:
+
 ```  
 source venv/bin/activate   
 ```  
-This should add (venv) to the prompt so it now looks something like:
 
-```  
-(venv) pi@sueno:~/DREAMassets/sobun $
-```  
+This should add (venv) to the prompt so it now looks something like: `(venv) pi@sueno:~/DREAMassets/sobun $`  
+
+_Debug_: If you need to turn off `venv` just enter the command `deactivate`. 
 
 Install the requirements for python:
 
 ```  
  pip install -r requirements.txt
 ```  
+_Debug:_ If you try to install requirements without `virtualenv`, don't worry because it'll fail. (you'd need to have used `sudo`). Just `activate` and install again.
 
 Congrats! :tada: you're now ready to run the python scrips.  For the primary sniffing script in the `dream` directory, run:
 
@@ -130,6 +137,74 @@ watch -n0.2 redis-cli llen celery
 ```
 
 By default, `watch` runs a command every 2 seconds. Use `-n` to set the time interval of your choosing. 
+
+
+
+----------------------
+
+### Misc notes and UNIX commands
+
+Purge celery when there's lots of old data in the queue bc that can screw up Google Cloud.  Note that you need to be in the virtualenv, as shown by `venv`. A simple `purge celery` doesn't work, you need to specify: 
+ 
+```  
+celery purge -A dream.syncer -f
+```  
+
+DREAM uses `systemctl` to control the services that sniff BLE advertisements (`bleAdvertisement`) and sync payloads (`payload`) to Google Cloud via PubSub.   
+
+Check the status of the DREAM services:
+
+```  
+sudo systemctl | grep dream
+```  
+
+Stop the `dream-syncer.service` service: 
+
+```  
+sudo systemctl stop dream-syncer.service 
+```  
+
+Start the service: 
+
+```  
+sudo systemctl start dream-syncer.service 
+```  
+
+Restart the service: 
+
+```  
+sudo systemctl restart dream-syncer.service 
+```  
+
+
+View the `.envrc` file that shows where to find credentials for Google Cloud:
+
+```  
+cat ~/repo/dream.git/sobun/.envrc
+```  
+Which returns: `export GOOGLE_APPLICATION_CREDENTIALS="./google-credentials.secret.json"`
+
+We looked at system files `networking.service` and `NetworkManager-wait-online.service` in:
+
+```  
+cd /etc/systemd/system/network-online.target.wants/
+```  
+
+We run the daemonizer as a shell script: 
+
+```  
+cd ~/repo/dream.git/
+./daemonize.sh 
+```  
+
+
+
+```  
+
+```  
+
+
+
 
 ----------------------
 
