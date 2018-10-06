@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from time import sleep
+import sys
 
 from google.cloud import bigquery
 
@@ -23,7 +24,6 @@ if __name__ == "__main__":
     while True:
         job = client.query(query)
         rows = job.result()
-        print("")
         for row in rows:
             if row.hub_id is not None:
                 fcount = first_counts.get(row.hub_id, None)
@@ -32,7 +32,9 @@ if __name__ == "__main__":
                     first_counts[row.hub_id] = row.count
 
                 delta = row.count - fcount
-                print("{hub_id: <15} {delta: <15} {count: <15}".format(
+                sys.stdout.write("{hub_id: <15} {delta: <15} {count: <15}\n".format(
                     hub_id=row.hub_id, count=row.count, delta=delta))
 
+        sys.stdout.write("\n")
+        sys.stdout.flush()
         sleep(1)
