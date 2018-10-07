@@ -117,6 +117,12 @@ mv dream-assets-project-aa551100cc66.json google-credentials.secret.json
 
 ## Setup code for DREAM
 
+Check what's running -- we're daemonizing, so we need to explicitly look! 
+
+```
+ps -ef | grep pyth
+```
+
 Make `repo` folder:
 
 ```
@@ -312,7 +318,64 @@ Use the `watch` command to see the service send each packet:
 watch -n0.5 sudo systemctl status dream-syncer.service
 ```
 
+## Monitor delivery to the cloud
 Go look in Google BigQuery and see your data! 
+
+```
+SELECT count(*) FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "ruya";
+```
+
+###From the command line:
+
+Navigate to the `sobun` folder
+
+```  
+cd ~/Documents/DREAM\ -\ data\ rules\ everything\ around\ me/code_for_DREAMassets/sobun/
+```  
+
+If you haven't already, install the `virtualenv` package: 
+```  
+sudo pip install virtualenv
+```  
+
+If it doesn't already exist, create the `venv` subfolder:
+
+```  
+virtualenv venv
+```  
+
+Startup (activate) the virtual environment
+
+```  
+source venv/bin/activate
+```  
+
+Note, you can also stop the virtual environment with simply:
+
+```  
+deactivate
+```  
+
+With the `venv` working (as shown in the command line), install the python requirements:
+
+```  
+pip install -r requirements.txt
+```  
+
+**Copy** the Google Cloud credentials in the `sobun/` folder **and then rename** them:
+```
+mv dream-assets-project-bb550077d3c3.json google-credentials.secret.json
+```
+
+Set the virtual environment for Google Cloud credentials: 
+```  
+source .envrc
+```  
+
+Run the `healthz` script, which returns a list of Hubs and a count of their payloads in BigQuery: 
+```  
+python -m dream.healthz
+```  
 
 
 -------------------------
