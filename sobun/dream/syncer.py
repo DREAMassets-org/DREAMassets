@@ -3,7 +3,7 @@
 # third party library
 from celery import Celery
 
-app = Celery('scanner', broker='redis://localhost:6379')
+app = Celery('syncer', broker='redis://localhost:6379')
 
 
 @app.task
