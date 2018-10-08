@@ -27,9 +27,11 @@ def run(data, context):
     row = json.loads(payload)
     hub_id = row.get('hub_id', None)
     tag_id = row['tag_id']
-    mfr_data = row['mfr_data']
+    measurements = row['measurements']
+    timestamp = row['timestamp']
+    rssi = row['rssi']
 
-    rows = [(tag_id, mfr_data, hub_id)]
+    rows = [(tag_id, measurements, hub_id, timestamp, rssi)]
 
     errors = client.insert_rows(table, rows)
     assert errors == []
