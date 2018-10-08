@@ -27,6 +27,9 @@ def clean(packet):
     # packet for celery
     packet['hub_id'] = HUB_ID
 
+    mfr_data = packet.pop('mfr_data')
+    measurements = mfr_data[-16:]
+    packet['measurements'] = measurements
     payload = json.dumps(packet)
     return payload
 
