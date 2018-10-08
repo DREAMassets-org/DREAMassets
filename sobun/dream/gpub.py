@@ -27,6 +27,10 @@ def send_data(packet):
     future = publisher.publish(topic, payload)
     print("sending payload: ", payload)
     msg_id = future.result()
+    if not msg_id:
+        # TODO make celery retry
+        # raise "Something went wrong. Try again"
+        pass
 
 # Why are we going from packet to payload in this file? 
 # wouldn't it be better to have it's own stand-alone file? 
@@ -37,8 +41,9 @@ def clean(packet):
     # i.e., we want data to enter the queue ASAP; we can take our time popping the queue
     packet['hub_id'] = HUB_ID
 
-    # TODO pare down from mfr_data to measurements
-
+    mfr_data = packet.pop('mfr_data')
+    measurements = mfr_data[-16:]
+    packet['measurements'] = measurements
     payload = json.dumps(packet)
     return payload
 

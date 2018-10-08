@@ -4,9 +4,7 @@
 
 from celery import Celery
 
-# ?? why is this called "scanner"? shouldn't it be called "syncer" per the Celery docs:
-# The first argument to Celery is the name of the current module. This is only needed so that names can be automatically generated when the tasks are defined in the __main__ module.
-app = Celery('scanner', broker='redis://localhost:6379')
+app = Celery('syncer', broker='redis://localhost:6379')
 
 
 @app.task
