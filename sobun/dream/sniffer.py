@@ -1,5 +1,4 @@
-# this is sniffer.py
-# a python script to gather BLE data from Tags and push the data into a queue
+# this is sniffer.py, a python script to gather BLE data from Tags and push the data into a queue
 #
 # Data structure:
 #   Overall:   BLE ADVERTISEMENT -> PACKET -> PAYLOAD
@@ -51,14 +50,11 @@ def extract_packet_from_bleAdvertisement(bleAdvertisement):
                 "rssi": rssi,
                 "timestamp": int(now()),
                 "mfr_data": values[-1],
-                "ts": time.time(),  #Add the current timestamp when bleAdvertisement arrived
             }
         return None
 
     except (UnicodeEncodeError, UnicodeDecodeError):
         # If there's a unicode error, disregard it since it isn't a Fujitsu Tag
-        # msg = "Failed to extract packet data from device %s" % bleAdvertisement.addr
-        # print msg
         return None
 
 

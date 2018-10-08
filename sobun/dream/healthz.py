@@ -1,3 +1,6 @@
+# This file queries BigQuery to see updates to our table 
+# We use it to monitor the system status 
+
 from __future__ import print_function
 
 from time import sleep
@@ -14,7 +17,8 @@ FROM `dream-assets-project.dream_assets_raw_packets.measurements_table`
 """
 
 client = bigquery.Client()
-# TODO let's put these ID's in an env.py file to simplicity 
+
+# TODO let's put these ID's in a config file to simplicity 
 dataset_id = 'dream_assets_raw_packets'
 table_id = 'measurements_table'
 table_ref = client.dataset(dataset_id).table(table_id)
@@ -26,13 +30,14 @@ table = client.get_table(table_ref)
 # sueno     0    1234
 # sueno     2    1236
 if __name__ == "__main__":
-    first_counts = {}  #what's the difference btw first_counts and fcount? Can we clarify var names?
+    first_counts = {}  #a set of first_counts for all Hubs 
     while True:
         job = client.query(query)
         rows = job.result()
         for row in rows:
             if row.hub_id is not None:
-                fcount = first_counts.get(row.hub_id, None)
+                #fcount is the first count for each individual Hub (from the set of first_counts)
+                fcount = first_counts.get(row.hub_id, None) 
                 if not fcount:
                     fcount = row.count
                     first_counts[row.hub_id] = row.count
@@ -41,6 +46,8 @@ if __name__ == "__main__":
                 sys.stdout.write("{hub_id: <15} {delta: <15} {count: <15}\n".format(
                     hub_id=row.hub_id, count=row.count, delta=delta))
 
+        # we use stdout so the output is grep'able
+        # python -m dream.healthz | grep sueno         
         sys.stdout.write("\n")
         sys.stdout.flush()
         sleep(1)

@@ -14,6 +14,8 @@ import json
 from google.cloud import bigquery
 
 client = bigquery.Client()
+
+# TODO put in config file too 
 dataset_id = 'dream_assets_raw_packets'
 table_id = 'measurements_table'
 table_ref = client.dataset(dataset_id).table(table_id)
@@ -38,6 +40,7 @@ def run(data, context):
     rssi = row['rssi']
     rows = [(tag_id, measurements, hub_id, timestamp, rssi)]
 
-    # what does this do? 
+    # try to insert this row. If there're errors, return it as a list 
     errors = client.insert_rows(table, rows)
+    # if the list isn't empty, raise an Assertion Error and use `errors` object as the message displayed 
     assert errors == [], errors
