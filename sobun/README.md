@@ -78,6 +78,22 @@ value: 750042040180607c6456361fd97e6456361fd801000000000000
 DREAM's python screen needs `redis` and `virtualenv` to run properly.  
 
 
+### Configure Redis
+
+Per [StackOverflow](https://stackoverflow.com/a/49839193/177298), we need to set `vm.overcommit_memory=1` so redis won't fail when it snapshots the data:
+
+Modify the `/etc/sysctl.conf` by adding:
+
+```
+vm.overcommit_memory=1
+```
+
+Then restart sysctl with:
+```
+sudo sysctl -p /etc/sysctl.conf
+```
+
+
 -------------------------
 ## for setit and forgetit
 ### these instructions will change after we harden deployment

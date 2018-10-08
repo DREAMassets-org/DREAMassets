@@ -19,20 +19,14 @@ from __future__ import print_function
 import re
 import sys
 import signal
+import time 
 
 # Get the bluepy library
 from bluepy.btle import Scanner, DefaultDelegate
 
 # sniffer.py pushes data into a queue that syncer.py pops
+# syncer runs the celery worker using the redis queue: https://celery.readthedocs.io/en/latest/getting-started/first-steps-with-celery.html#first-steps
 from dream.syncer import push
-
-#   within the advertising packet is a description `desc`
-#   filter out devices with desc != manufacturer
-#   2. Of the devices with desc == manufacturer,
-#   in the payload there's a device address `addr` and a `value`
-#   the `addr` is the Tag ID (for fujitsu packets)
-#   the `value` contains the manufacturer ID (for Fujistu 010003000300)
-#   and the measurement we care about (temperature & acceleration)
 
 
 def extract_packet_from_bleAdvertisement(bleAdvertisement):
@@ -56,6 +50,7 @@ def extract_packet_from_bleAdvertisement(bleAdvertisement):
                 "tag_id": tag_id,
                 "rssi": rssi,
                 "mfr_data": values[-1],
+                "ts": time.time(),  #Add the current timestamp when bleAdvertisement arrived
             }
         return None
 
@@ -66,16 +61,15 @@ def extract_packet_from_bleAdvertisement(bleAdvertisement):
         return None
 
 
-# define the regular expression (regex) for Fujitsu
+# define the regular expression (regex) for Fujitsu  
 FUJITSU_PACKET_REGEX = re.compile(r'010003000300')
 
-
-# evaluate whether a packet has mfr_data matching the fujitsu Tag
+# evaluate whether a packet has mfr_data matching fujitsu 
 def is_fujitsu_tag(packet):
     return re.search(FUJITSU_PACKET_REGEX, packet['mfr_data'])
 
 
-# The Push delegate is based on the Default Delegate to receive BLE advertisements from the scanner
+# The PushDelegate receives BLE advertisements from the scanner
 class PushDelegate(DefaultDelegate):
     def __init__(self):
         DefaultDelegate.__init__(self)
@@ -83,11 +77,12 @@ class PushDelegate(DefaultDelegate):
     # When this script "discovers" a new BLE advertisement, do this:
     def handleDiscovery(self, bleAdvertisement, _unused_isNewTag_,
                         _unused_isNewData_):
-        # Note that _unused_isNewTag_ and _unused_isNewData_ arent' relevant for DREAM
+        # _unused_isNewTag_ and _unused_isNewData_ arent' relevant for DREAM
         packet = extract_packet_from_bleAdvertisement(bleAdvertisement)
         if packet:
             if is_fujitsu_tag(packet):
-                push.delay(packet)
+                #push the packet into the redis broker queue for a celery worker to handle asynchronously
+                push.delay(packet)  
                 print('push packet to the celery queue')
 
 
@@ -112,7 +107,7 @@ def looper(scanner):
 
 
 # This is for docopt.
-# Note that the "<hci>" means something to docopt, it's not just text
+# The "<hci>" means something to docopt, it's not just text
 USAGE = """
 Usage: dream.sniffer <hci>
 

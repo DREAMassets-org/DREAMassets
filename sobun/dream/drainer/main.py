@@ -1,3 +1,6 @@
+# This file goes is our Google Cloud Function for PubSub
+# Specifically, it subs to the RasPi's pub 
+
 """
 Cloud Function: Background Function
 
@@ -27,9 +30,12 @@ def run(data, context):
     row = json.loads(payload)
     hub_id = row.get('hub_id', None)
     tag_id = row['tag_id']
-    mfr_data = row['mfr_data']
+    mfr_data = row['mfr_data'] #payloads contain measurements, not mfr_data
+
+    #TODO process measurements into meaningful values here
 
     rows = [(tag_id, mfr_data, hub_id)]
 
+    # what does this do? 
     errors = client.insert_rows(table, rows)
     assert errors == []

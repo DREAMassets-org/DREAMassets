@@ -13,13 +13,19 @@ FROM `dream-assets-project.dream_assets_raw_packets.measurements_table`
 """
 
 client = bigquery.Client()
+# TODO let's put these ID's in an env.py file to simplicity 
 dataset_id = 'dream_assets_raw_packets'
 table_id = 'measurements_table'
 table_ref = client.dataset(dataset_id).table(table_id)
 table = client.get_table(table_ref)
 
+# Display the hub name, count of payloads since starting the script, and total # of payloads ever
+#
+# Example:
+# sueno     0    1234
+# sueno     2    1236
 if __name__ == "__main__":
-    first_counts = {}
+    first_counts = {}  #what's the difference btw first_counts and fcount? Can we clarify var names?
     while True:
         job = client.query(query)
         rows = job.result()
