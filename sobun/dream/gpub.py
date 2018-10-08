@@ -18,6 +18,10 @@ def send_data(packet):
     future = publisher.publish(topic, payload)
     print("sending payload: ", payload)
     msg_id = future.result()
+    if not msg_id:
+        # TODO make celery retry
+        # raise "Something went wrong. Try again"
+        pass
 
 
 def clean(packet):

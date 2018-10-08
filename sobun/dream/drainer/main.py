@@ -34,4 +34,4 @@ def run(data, context):
     rows = [(tag_id, measurements, hub_id, timestamp, rssi)]
 
     errors = client.insert_rows(table, rows)
-    assert errors == []
+    assert errors == [], errors
