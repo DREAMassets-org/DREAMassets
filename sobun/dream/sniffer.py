@@ -56,7 +56,7 @@ def extract_packet_from_bleAdvertisement(bleAdvertisement):
                 # return this packet
                 "tag_id": tag_id,
                 "rssi": rssi,
-                "timestamp": now(),
+                "timestamp": int(now()),
                 "mfr_data": values[-1],
             }
         return None
