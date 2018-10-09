@@ -68,8 +68,9 @@ def is_fujitsu_tag(packet):
 
 # The PushDelegate receives BLE advertisements from the scanner
 class PushDelegate(DefaultDelegate):
-    def __init__(self):
+    def __init__(self, hci=0):
         DefaultDelegate.__init__(self)
+        self.hci = hci
 
     # When this script "discovers" a new BLE advertisement, do this:
     def handleDiscovery(self, bleAdvertisement, _unused_isNewTag_,
@@ -79,8 +80,8 @@ class PushDelegate(DefaultDelegate):
         if packet:
             if is_fujitsu_tag(packet):
                 #push the packet into the redis broker queue for a celery worker to handle asynchronously
-                push.delay(packet)  
-                print('push packet to the celery queue')
+                push.delay(packet, self.hci)
+                print('push packet from HCI {hci} to the celery queue'.format(hci=self.hci))
 
 
 # scan continuously
@@ -124,7 +125,7 @@ if __name__ == '__main__':
     hci = args['<hci>']
 
     # this delegate will receive the BLE advertisemnts from the scanner
-    delegate = PushDelegate()
+    delegate = PushDelegate(hci)
 
     # the scanner receives the BLE advertising packets and delivers them to the delegate
     scanner = Scanner(hci).withDelegate(delegate)

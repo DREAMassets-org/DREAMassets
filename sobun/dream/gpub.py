@@ -22,10 +22,10 @@ publisher = pubsub.PublisherClient(
 
 # reduce the packet to a payload and send it to BigQuery via PubSub
 # syncer.py calls this function 
-def send_data(packet):
+def send_data(packet, hci):
     payload = clean(packet)
     future = publisher.publish(topic, payload)
-    print("sending payload: ", payload)
+    print("sending payload from HCI {hci}: {payload}".format(hci=hci, payload=payload))
     msg_id = future.result()
     if not msg_id:
         # TODO make celery retry
