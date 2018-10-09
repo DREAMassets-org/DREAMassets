@@ -5,7 +5,8 @@
 # explained in https://celery.readthedocs.io/en/latest/getting-started/first-steps-with-celery.html#first-steps
 from celery import Celery
 
-app = Celery('syncer', broker='redis://localhost:6379')
+app = Celery()
+app.config_from_object('celeryconfig')
 
 
 @app.task
