@@ -17,20 +17,33 @@ HUB_ID = socket.gethostname()
 # Let's revisit batch size during optimization
 # TODO move max_messages to config file 
 topic = "projects/dream-assets-project/topics/tags-dev"
+
+# When the batch is created, it begins a countdown that publishes the batch
+# once sufficient time has elapsed (by default, this is 0.05 seconds).
+# We batch for 10 seconds worth of data coming out of the redis queue.
 publisher = pubsub.PublisherClient(
-    batch_settings=types.BatchSettings(max_messages=50), )
+        batch_settings=types.BatchSettings(max_messages=500, max_latency=20), )
+
+
+def on_result(future):
+    msg_id = future.result()
+    if not msg_id:
+        print("Message NOT created on Google Pub/Sub")
+        # TODO make celery retry
+
 
 # reduce the packet to a payload and send it to BigQuery via PubSub
 # syncer.py calls this function 
-def send_data(packet):
+def send_data(packet, hci):
     payload = clean(packet)
-    future = publisher.publish(topic, payload)
-    print("sending payload: ", payload)
-    msg_id = future.result()
-    if not msg_id:
-        # TODO make celery retry
-        # raise "Something went wrong. Try again"
-        pass
+    try:
+        future = publisher.publish(topic, payload)
+        print("sending payload from HCI {hci}: {payload}".format(hci=hci, payload=payload))
+    except:
+        print("unable to publish to Google Pub/Sub")
+    else:
+        future.add_done_callback(on_result)
+
 
 # TODO make clean a private function; only used by send_data 
 def clean(packet):

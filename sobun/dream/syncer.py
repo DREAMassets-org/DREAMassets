@@ -5,11 +5,12 @@
 # explained in https://celery.readthedocs.io/en/latest/getting-started/first-steps-with-celery.html#first-steps
 from celery import Celery
 
-app = Celery('syncer', broker='redis://localhost:6379')
+app = Celery()
+app.config_from_object('celeryconfig')
 
 
 @app.task
-def push(packet):
+def push(packet, hci=0):
     # Publish packet data to Google's PubSub
 
     # Lazy import send_data so only the Celery workers need Google Authz
@@ -18,4 +19,4 @@ def push(packet):
     # We pass packets to send_data, 
     # which cleans the packet to create a payload
     # and then publishes the payload to PubSub 
-    send_data(packet)
+    send_data(packet, hci)
