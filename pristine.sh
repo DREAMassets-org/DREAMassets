@@ -2,15 +2,15 @@
 
 # We run this script before creating a "sleep" Hub 
 
+# Update the daemon services
+/home/pi/repo/dream.git/daemonize.sh
+
 # Stop the sniffer and syncer processes
 sudo systemctl stop dream-syncer
 sudo systemctl stop dream-sniffer@{0..3}
 
 # Flush all data from the redis queue and assicated list of results
 redis-cli flushall
-
-# Update the daemon services
-/home/pi/repo/dream.git/daemonize.sh
 
 echo
 echo "To create a pristine sleep Hub, run this script and:" 
