@@ -1,0 +1,8 @@
+[Unit]
+Description=Stop dream-sniffer in the evening
+
+[Timer]
+OnCalendar=*-*-* 18:00:00
+
+[Install]
+WantedBy=multi-user.target
