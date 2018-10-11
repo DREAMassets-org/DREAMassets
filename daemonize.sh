@@ -5,7 +5,6 @@ sudo cp ./dream-syncer.service /etc/systemd/system/
 
 sudo systemctl daemon-reload
 
-sudo systemctl disable dream-sniffer.service
 sudo systemctl enable dream-sniffer@{0..3}.service
 sudo systemctl enable dream-syncer.service
 
