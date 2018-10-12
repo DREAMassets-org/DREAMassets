@@ -154,8 +154,20 @@ mkdir secrets
 mkdir repo
 ```
 
+Put Google credentials in the `secrets` folder from your computer 
+
 ```
-cd repo
+scp dream-assets-project-aa551100cc66.json pi@sueno.local:~/secrets/
+```
+Then on the Pi, rename the file: 
+```
+mv dream-assets-project-bb550077d3c3.json google-credentials.secret.json
+```
+
+Do everything else in the `repo` folder:
+
+```
+cd ~/repo
 ```
 
 ```
@@ -206,21 +218,33 @@ pip install -r requirements.txt
 
 _Debug:_ The `sniffer.py` and `syncer.py` scripts must be run from the virtual environment. For deployment, DREAM uses systemd to launch the `dream-sniffer@{0..3}.service` and `dream-syncer.service`, so it might not seem obvious that the virtual environment is important, but it's crucial.
 
+
+### Deployment
+From the `sobun/` folder...
+
+Deploy the network manager to restart the sniffer and syncer when there's a change to the network, i.e., the cellular connection drops and then resumes.
+
+```
+sudo cp sobun/95.restart_dream_syncer.sh /etc/NetworkManager/dispatcher.d
 ```
 
 ```
+sudo chmod +x /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
+
+```
+
+Deploy the services to start and stop the Hub only during meaningful hours
+```
+./peak-hour.sh
+```
+
+Deploy the services to start and stop the sniffer and syncer automatically with a deamon
+```
+./pristine.sh
 
 ```
 
 
-```
-
-```
-
-
-```
-
-```
 
 
 
