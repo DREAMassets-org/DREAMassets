@@ -1,7 +1,7 @@
 # README for the DREAM project
 #### _Sobun style :)_
 
-The DREAM project is an IoT system to gather environmental data from assets such as items in a warehouse. Physically, the project consists of (1) Tags with sensors that broadcast BLE packets containing measurements, (2) Hubs that route the measurements and (3) Cloud storage and analysis.  Hubs are Raspberry Pi machines with SORACOM cellular dongles.  Cloud is Google PubSub, Cloud Function, and BigQuery. 
+The DREAM project is an IoT system to gather environmental data from assets such as items in a warehouse. Physically, the project consists of (1) Tags with sensors that broadcast BLE advertisements containing measurements, (2) Hubs that route the data and (3) Cloud storage and analysis.  Hubs are Raspberry Pi machines with SORACOM cellular dongles.  Cloud is Google PubSub, Cloud Function, and BigQuery. 
 
 Both the Raspberry Pi and Google Cloud have:
 
@@ -23,17 +23,29 @@ Here's the relevant data in the `bleAdvertisement`:
   * `010003000300` is the unique identifier for the Tags
   * `1d04 5900 0a00 4608` are sensor **`measurements`** for temp, x-, y-, and z-acceleration.
 
-`sniffer.py` creates a **packet** with `tag_ID `, `rssi`, and `mfr_data`. `sniffer.py` pushes packets into the queue. 
+Here's the data when `sniffer.py` creates a **packet**: 
 
-`syncer.py`creates a **payload** with `tag_ID`, `rssi` and `measurements`. `syncer.py` pops packets from the queue, removes the junk and identifier, and publishes payloads to the cloud. 
+* `tag_ID ` a unique identifier, the BLE MAC address
+* `rssi` signal strength
+* `timestamp` when the BLE advertisement arrived at the Hub
+* `mfr_data` in hex which includes an identifier and measurements
+
+
+Here's the data when `syncer.py`creates a **payload**:
+
+* `tag_ID` 
+* `rssi` 
+* `timestamp`
+* `measurements` in hex which are just 16 characters (8 bytes) of temperature and acceleration data.
+
 
 
 ## Latest architecture
-We're using a queue to decouple sniffing BLE data from publishing to the cloud.  
+We're using a queue to decouple sniffing BLE from publishing to the cloud.  
 
 * `sniffer.py` pushes packets into the queue  
 * **Redis** holds the queue   
-* In `syncer.py`, **Celery "workers"** pop packets from the queue, reduces them to payloads and sends payloads to the cloud. 
+* In `syncer.py`, **Celery "workers"** pop packets from the queue, reduce the packets to payloads and send payloads to the cloud. 
 
 
 ## Here's how `bluepy` works in the DREAM project:  
@@ -42,7 +54,7 @@ We're using a queue to decouple sniffing BLE data from publishing to the cloud.
   * Before DREAM can scan, DREAM must define the delegate object where `scanner` will deliver the BLE advertisements. 
   * To start the scan, DREAM needs to run `clear()`, `start()` and then within a `while true` run `process()`.   `process()` has a default 10-second timeout so that's why it's in the infinite loop.  
   * DREAM doesn't use `scan()` because of its default timeout.  
-* Bluepy finds "BLE broadcasts" and stores their data in the `ScanEntry` object. Bluetooth has defined [more than 20](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile) types of data.   
+* Bluepy finds "BLE broadcasts (advertisements)" and stores their data in the `ScanEntry` object. Bluetooth has defined [more than 20](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile) types of data.   
   * The method `getScanData()` returns for each tag a tripple with advertising type, description and value: `(adtype, desc, value)`. DREAM only uses the manufacturer-defined data with Advertising Data type `adtype == 255` (255 is 0xFF in hex) which correspends to the description `desc == "Manufacturer"`. There are many BLE devices broadcasting with manufacturer data, so DREAM filters for the regular expression (regex) that corresponds to the Tags: `010003000300`.  
   * Additionally, DREAM needs the `Tag ID`, what bluepy calls the MAC address of the BLE device which DREAM gets from the `bleAdvertisement.addr` property. 
 * The `DefaultDelegate` class has `DefaultDelegate()`
@@ -90,7 +102,7 @@ value: 750042040180607c6456361fd97e6456361fd801000000000000
 # Build a Hub from Scratch
 
 ## Provisioning RasPi: Get the packages
-The DREAM project uses Linux on the Raspberry Pi.  Disable Wolfram since it's ridiculously slow to load (less than 100kb/sec) and not used in this project. 
+The DREAM project uses Linux on the Raspberry Pi.  Disable Wolfram since it comes pre-loaded and it's ridiculously slow to update (less than 100kb/sec) and not used in this project. 
 
 ```
 sudo apt-get update  
@@ -136,6 +148,8 @@ sudo apt-get install network-manager -y
 _Debug:_ Note that this script restarts the network service, so it might hang and kick you off the network. Don't worry about it -- just close the Terminal window and log back in to the RasPi.  
 
 
+
+
 ## Provisioning RasPi: Get the files and folders
 
 The RasPi comes with many pre-installed folders. Remove all of them (except Desktop) to clean up the home directory.
@@ -143,6 +157,20 @@ The RasPi comes with many pre-installed folders. Remove all of them (except Desk
 ```
 rm -rf Music
 ```
+
+
+Modify the `/etc/sysctl.conf` by adding a line with `vm.overcommit_memory=1`:
+
+```
+sudo pico /etc/sysctl.conf
+```
+
+Then restart sysctl with:
+```
+sudo sysctl -p /etc/sysctl.conf
+```
+
+
 
 Create the two directories for DREAM: 
 
@@ -163,6 +191,7 @@ Then on the Pi, rename the file:
 ```
 mv dream-assets-project-bb550077d3c3.json google-credentials.secret.json
 ```
+
 
 Do everything else in the `repo` folder:
 
@@ -239,14 +268,105 @@ Deploy the services to start and stop the Hub only during meaningful hours
 ```
 
 Deploy the services to start and stop the sniffer and syncer automatically with a deamon
+
 ```
 ./pristine.sh
 
 ```
 
+### Setup Soracom
+
+Setup an APN (Access Point Name) for the SORACOM SIM to connect to the SORACOM mobile network
+
+```
+sudo nmcli con add type gsm ifname "*" con-name soracom apn soracom.io user sora password sora  
+```
+This should give you a response like `Connection 'soracom' (3cbecb73-2f6c-48f9-819a-3e233408d4a0) successfully added.`
+
+Plug in your USB dongle with Soracom SIM card. You should have already registered the SIM card with Soracom.
+
+Restart your Hub.
+
+```  
+sudo reboot
+```  
+
+Wait for the USB light to flash green and then SSH back into the Pi.  Wait for the light on the SORACOM to go blue and check whether `ifconfig` shows `ppp0` by running the command:
+```  
+ifconfig
+```  
+
+_Debug_: If you have trouble SSH'ing into your Hub using `ssh pi@sueno.local` you can use the LAN IP address -- in the example above that's `inet 10.4.8.68`. So you could `ssh pi@10.4.8.68`.  There's a mapping from `sueno.local` to `10.4.8.68` that sometimes breaks, so by going direct to IP address, you can work around the problem.  
+
+Run the following commands to grab and execute Soracom's helper script. This will make Soracom cell the default internet connection on your Hub.
+
+Go to the directory with the soracom file:
+
+```  
+cd ~/repo/dream.git/soracom
+```  
+
+Copy the `ppp_route_metric` script to the RasPi startup directory
+
+```  
+sudo cp 90.set_ppp_route_metric /etc/NetworkManager/dispatcher.d/
+```  
+
+Make the file executable
+
+```  
+sudo chmod +x /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric
+```  
+
+Run Soracom's file:
+ 
+```  
+sudo /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric ppp0 up
+```  
+
+Restart your Hub.
+
+```  
+sudo reboot
+```  
+
+SSH back into your Hub and check the routing table, where `ppp0` should be at the top (once the USB has a solid blue light, indicating a Soracom connection).
+
+```  
+route -n
+```  
+
+Last, to double check, run a `traceroute` to make sure the first hop is Soracom's AWS server in Europe:
+
+```  
+traceroute fast.com
+```  
+
+Congrats :tada: Happy cell connectivity!  
 
 
 
+
+### Create a clone-able SD Card
+Use `SD Clone` to create an exact image of the SD card
+
+* Stop the `sniffer` and `syncer` because they'll add payloads to the queue and their logs build up, which can cause problems.
+
+```
+sudo systemctl stop dream-syncer.service
+```
+```
+sudo systemctl stop dream-sniffer@{0..3}
+```
+
+* Check the redis queue and purge it
+
+```
+redis-cli llen celery
+```
+```
+redis-cli flushall
+```
 
 
 -----------------------------
@@ -254,6 +374,22 @@ Deploy the services to start and stop the sniffer and syncer automatically with 
 
 
 # Monitor system performance
+
+
+Set the virtual environment for Google Cloud credentials: 
+
+```
+source venv/bin/activate
+```
+
+```  
+source .envrc
+```  
+
+Run the `healthz` script, which returns a list of Hubs and a count of their payloads in BigQuery: 
+```  
+python -m dream.healthz
+```  
 
 
 
@@ -734,123 +870,7 @@ cd ~/repo/dream.git/
 
 ----------------------
 
-## Hub setup
-
-Find the RasPi's MAC address (e.g., `aa:bb:cc:11:22:33`) for wifi and record it in the *traits* file. Read the RasPi’s unique MAC address  for wifi `wlan0` [using](https://www.raspberrypi-spy.co.uk/2012/06/finding-the-mac-address-of-a-raspberry-pi/):
-
-```
-cat /sys/class/net/wlan0/address
-```
-
-The output should look like this: 
-
-```
-pi@sueno:~ $
-pi@sueno:~ $ cat /sys/class/net/wlan0/address
-aa:bb:cc:11:22:33
-pi@sueno:~ $
-```
-
-Typically, to SSH into the RasPi, you'll use:
-```
-MacBook:~ user$ 
-MacBook:~ user$ ssh pi@sueno.local
-```
-Sometimes the mapping between `sueno.local` and `aa:bb:cc:11:22:33` breaks.  So, now you can use `arp` to get the MAC address and then SSH in:
-
-```
-MacBook:~ user$ 
-MacBook:~ user$ arp -a | grep aa:bb
-? (10.4.9.121) at 6e:92:77:aa:f0:6f on en0 ifscope [ethernet]
-MacBook:~ user$ 
-MacBook:~ user$ ssh pi@10.4.9.121
-pi@10.4.9.121's password:
-
-Linux sueno 4.14.62-v7+ #1134 SMP Tue Aug 14 17:10:10 BST 2018 armv7l
-
-pi@sueno:~ $
-pi@sueno:~ $ date
-Fri Oct  5 10:57:36 PDT 2018
-pi@sueno:~ $ exit
-logout
-Connection to 10.4.9.121 closed.
-
-MacBook:~ user$ 
-```
-
-
 ----------------------
-
-## Setup Soracom
-
-Setup an APN (Access Point Name) for the SORACOM SIM to connect to the SORACOM mobile network
-
-```
-sudo nmcli con add type gsm ifname "*" con-name soracom apn soracom.io user sora password sora  
-```
-This should give you a response like `Connection 'soracom' (3cbecb73-2f6c-48f9-819a-3e233408d4a0) successfully added.`
-
-Plug in your USB dongle with Soracom SIM card. You should have already registered the SIM card with Soracom.
-
-Restart your Hub.
-
-```  
-sudo reboot
-```  
-
-Wait for the USB light to flash green and then SSH back into the Pi.  Wait for the light on the SORACOM to go blue and check whether `ifconfig` shows `ppp0` by running the command:
-```  
-ifconfig
-```  
-
-_Debug_: If you have trouble SSH'ing into your Hub using `ssh pi@sueno.local` you can use the LAN IP address -- in the example above that's `inet 10.4.8.68`. So you could `ssh pi@10.4.8.68`.  There's a mapping from `sueno.local` to `10.4.8.68` that sometimes breaks, so by going direct to IP address, you can work around the problem.  
-
-Run the following commands to grab and execute Soracom's helper script. This will make Soracom cell the default internet connection on your Hub.
-
-Go to the directory with the soracom file:
-
-```  
-cd ~/DREAMassets/soracom
-```  
-
-Copy the `ppp_route_metric` script to the RasPi startup directory
-
-```  
-sudo cp 90.set_ppp_route_metric /etc/NetworkManager/dispatcher.d/
-```  
-
-Make the file executable
-
-```  
-sudo chmod +x /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric
-```  
-
-Run Soracom's file:
- 
-```  
-sudo /etc/NetworkManager/dispatcher.d/90.set_ppp_route_metric ppp0 up
-```  
-
-Restart your Hub.
-
-```  
-sudo reboot
-```  
-
-SSH back into your Hub and check the routing table, where `ppp0` should be at the top (once the USB has a solid blue light, indicating a Soracom connection).
-
-```  
-route -n
-```  
-
-Last, to double check, run a `traceroute` to make sure the first hop is Soracom's AWS server in Europe:
-
-```  
-traceroute fast.com
-```  
-
-Congrats :tada: Happy cell connectivity!  
-
 
 ----------------------
 
