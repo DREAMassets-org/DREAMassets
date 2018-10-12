@@ -2,8 +2,9 @@
 
 # We run this script before creating a "sleep" Hub 
 
-# Update the daemon services
+# Update the daemon services and peak hour timer services
 /home/pi/repo/dream.git/daemonize.sh
+/home/pi/repo/dream.git/peak-hour.sh
 
 # Stop the sniffer and syncer processes
 sudo systemctl stop dream-syncer
