@@ -1,3 +1,5 @@
+# This file is a development tool
+
 import redis
 
 from dream.syncer import push

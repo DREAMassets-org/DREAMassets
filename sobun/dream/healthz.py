@@ -51,3 +51,5 @@ if __name__ == "__main__":
         sys.stdout.write("\n")
         sys.stdout.flush()
         sleep(1)
+
+# TODO catch SIGINTs for a graceful exit 
