@@ -1,46 +1,56 @@
-# Hardening the DREAM project
-### Sobun style :)
+# README for the DREAM project
+#### _Sobun style :)_
 
-## Architecture
-We're using a queue to decouple sniffing BLE data from publishing to the cloud.  
+The DREAM project is an IoT system to gather environmental data from assets such as items in a warehouse. Physically, the project consists of (1) Tags with sensors that broadcast BLE packets containing measurements, (2) Hubs that route the measurements and (3) Cloud storage and analysis.  Hubs are Raspberry Pi machines with SORACOM cellular dongles.  Cloud is Google PubSub, Cloud Function, and BigQuery. 
 
-* We're using `redis` to create the queue   
-* `sniffer.py` pushes packets into the queue  
-* `syncer.py` pops the packets from the queue, reduces them to payloads and sends payloads to the cloud. 
+Both the Raspberry Pi and Google Cloud have:
+
+1. Provisioning
+2. Applications
+3. Deployment
 
 ## Data structure
 ### `bleAdvertisement` -> `packet` -> `payload`
 
-We're using [bluepy](https://ianharvey.github.io/bluepy-doc/index.html) to interface with Bluetooth in advertising mode. All BLE devices emit a BLE advertisent `bleAdvertisement` with lots of data. There's data we don't care about, such as `adtype`. First, `sniffer.py` puts **packets** of the data we care about in a queue. Then `syncer.py` reduces packets to **payloads** and publishes the payloads to the cloud. 
+We're using [bluepy](https://ianharvey.github.io/bluepy-doc/index.html) to interface with Bluetooth in advertising mode. All BLE devices emit a **`BLE advertisent`** with lots of data, including the environmental measurements pertinent to DREAM as well as less important details, such as `adtype`. On the Hub, `sniffer.py` puts a **`packet`** of the data DREAM needs in a queue. Then `syncer.py` reduces the packet to a **`payload`** and publishes the payloads to the cloud. 
 
 Here's the relevant data in the `bleAdvertisement`: 
 
 * `addr` is a 6-byte (12-character) MAC **address** of the BLE device, which is the `tag_ID` in DREAM. 
 * `rssi` is the 1-byte (2-character) Received Signal Strength Indicator, a relative metric that's unique to RasPi.
-* `mfr_data` is 16-byte (32-character) blog of hex data defined by the manufacturer. For Tags in DREAM, `mfr_data` looks like `5900 010003000300 1d04 5900 0a00 4608` where:
+* `mfr_data` is 16-byte (32-character) blob of hex data defined by the manufacturer. For Tags in DREAM, `mfr_data` looks like `5900 010003000300 1d04 5900 0a00 4608` where:
   * `5900` is junk 
-  * `010003000300` is Fujitsu's unique BLE identifier 
-  * `1d04 5900 0a00 4608` are sensor **measurements** for temp, x-, y-, and z-acceleration, which are `measurements` in DREAM.
+  * `010003000300` is the unique identifier for the Tags
+  * `1d04 5900 0a00 4608` are sensor **`measurements`** for temp, x-, y-, and z-acceleration.
 
 `sniffer.py` creates a **packet** with `tag_ID `, `rssi`, and `mfr_data`. `sniffer.py` pushes packets into the queue. 
 
-`syncer.py`creates a **payload** with `tag_ID`, `rssi` and `measurements`. `syncer.py` pops packets from the queue, removes the junk and Fujitsu identifier, and publishes payloads to the cloud. 
+`syncer.py`creates a **payload** with `tag_ID`, `rssi` and `measurements`. `syncer.py` pops packets from the queue, removes the junk and identifier, and publishes payloads to the cloud. 
 
 
-## Here's how bluepy works in the DREAM project:  
+## Latest architecture
+We're using a queue to decouple sniffing BLE data from publishing to the cloud.  
+
+* `sniffer.py` pushes packets into the queue  
+* **Redis** holds the queue   
+* In `syncer.py`, **Celery "workers"** pop packets from the queue, reduces them to payloads and sends payloads to the cloud. 
+
+
+## Here's how `bluepy` works in the DREAM project:  
 
 * A `scanner` object is used to [scan](https://ianharvey.github.io/bluepy-doc/scanner.html) for BLE devices which are broadcasting advertising data.  `Scanner` is designed around the use case of scanning for 10 seconds to find a device to connect with. For DREAM, we just want to scan continously, so we're using it slightly differently than its core use case.
-  * Before DREAM can scan, DREAM must define the delegate object using `withDelegate` where `scanner` will deliver the BLE advertisements.
-  * To start the scan DREAM needs to run `clear()`, `start()` and then within a `while true` run `process()`.   `process()` has a default 10-second timeout so that's why it's in the while loop.  
+  * Before DREAM can scan, DREAM must define the delegate object where `scanner` will deliver the BLE advertisements. 
+  * To start the scan, DREAM needs to run `clear()`, `start()` and then within a `while true` run `process()`.   `process()` has a default 10-second timeout so that's why it's in the infinite loop.  
   * DREAM doesn't use `scan()` because of its default timeout.  
-* Bluepy finds "BLE broadcasts" (what DREAM calls `bleAdvertisement`s) and stores their data in the `ScanEntry` object. Bluetooth has defined [more than 20](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile) types of data.   
+* Bluepy finds "BLE broadcasts" and stores their data in the `ScanEntry` object. Bluetooth has defined [more than 20](https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile) types of data.   
   * The method `getScanData()` returns for each tag a tripple with advertising type, description and value: `(adtype, desc, value)`. DREAM only uses the manufacturer-defined data with Advertising Data type `adtype == 255` (255 is 0xFF in hex) which correspends to the description `desc == "Manufacturer"`. There are many BLE devices broadcasting with manufacturer data, so DREAM filters for the regular expression (regex) that corresponds to the Tags: `010003000300`.  
   * Additionally, DREAM needs the `Tag ID`, what bluepy calls the MAC address of the BLE device which DREAM gets from the `bleAdvertisement.addr` property. 
 * The `DefaultDelegate` class has `DefaultDelegate()`
-to initialise instance of the delegate object. 
-  * The `scanner` object uses tje `handleDiscovery()` method to send data to the `delegate` when the `scanner` receives new advertising data. `handleDiscovery()` has the `scanEntry` argument containing device information and advertising data.  Also in `handleDiscovery()` are the arguments `isNewDev` and `isNewData` which aren't pertinent to DREAM, so they're disregarded.
-
-### Mike validated our understanding of the data with `test_sniffer.py`
+to initialise the instance of the delegate object. 
+  * The `scanner` object uses the `handleDiscovery()` method to send data to the `delegate` when the `scanner` discovers a new advertisement. `handleDiscovery()` has the `scanEntry` argument containing device information and advertising data.   
+  
+  
+### We validated our understanding of the data with `test_sniffer.py`
 For a Tag with regex `010003000300`, there's a list of values, a MAC address, an AD type, a description, and a value containing the relevant data. The script prints "push to the celery queue" to show proper identification.
 
 ```   
@@ -74,6 +84,160 @@ desc: Manufacturer
 value: 750042040180607c6456361fd97e6456361fd801000000000000
 ```
 
+-----------------------------
+
+
+# Build a Hub from Scratch
+
+## Provisioning RasPi: Get the packages
+The DREAM project uses Linux on the Raspberry Pi.  Disable Wolfram since it's ridiculously slow to load (less than 100kb/sec) and not used in this project. 
+
+```
+sudo apt-get update  
+```
+
+```
+sudo apt-mark hold wolfram-engine
+```
+
+```
+sudo apt-get upgrade -y
+```
+
+
+Get glib2.0, Google Cloud PubSub, BLE, python daemon, redis and virtualenv: 
+```
+sudo apt-get install libglib2.0-dev -y
+```
+```
+sudo pip install google-cloud-pubsub
+```
+```
+sudo pip install bluepy
+```
+```
+sudo pip install python-daemon
+```
+
+```
+sudo apt-get install redis-server -y
+```
+```
+sudo pip install virtualenv   
+```
+
+
+Get the latest `network-manager` software which we'll use for the SORACOM cellular connection:   
+
+```  
+sudo apt-get install network-manager -y
+```  
+
+_Debug:_ Note that this script restarts the network service, so it might hang and kick you off the network. Don't worry about it -- just close the Terminal window and log back in to the RasPi.  
+
+
+## Provisioning RasPi: Get the files and folders
+
+The RasPi comes with many pre-installed folders. Remove all of them (except Desktop) to clean up the home directory.
+
+```
+rm -rf Music
+```
+
+Create the two directories for DREAM: 
+
+```
+mkdir secrets
+```
+
+```
+mkdir repo
+```
+
+```
+cd repo
+```
+
+```
+git clone https://github.com/DREAMassets-org/DREAMassets.git
+```
+
+```
+mv DREAMassets/ dream.git
+```
+
+
+Go into the git repo and switch to the `hardening` branch:
+
+```
+cd dream.git
+```
+
+```
+git checkout hardening
+```
+
+Create the virtual environment from `sobun/`:
+
+```
+cd sobun
+```
+
+```
+virtualenv venv
+```
+
+Now activate the `venv`:
+
+```
+source venv/bin/activate
+```
+
+```
+source .envrc
+```
+
+
+Install the requirements:
+
+```
+pip install -r requirements.txt
+```
+
+_Debug:_ The `sniffer.py` and `syncer.py` scripts must be run from the virtual environment. For deployment, DREAM uses systemd to launch the `dream-sniffer@{0..3}.service` and `dream-syncer.service`, so it might not seem obvious that the virtual environment is important, but it's crucial.
+
+```
+
+```
+
+```
+
+
+```
+
+```
+
+
+```
+
+```
+
+
+
+
+-----------------------------
+
+
+
+# Monitor system performance
+
+
+
+
+
+
+-----------------------------
+
 ## Running the python script
 DREAM's python screen needs `redis` and `virtualenv` to run properly.  
 
@@ -97,6 +261,30 @@ sudo sysctl -p /etc/sysctl.conf
 -------------------------
 ## for setit and forgetit
 ### these instructions will change after we harden deployment
+
+
+install google pubsub
+```
+sudo pip install google-cloud-pubsub
+```
+
+```
+sudo apt-get install libglib2.0-dev -y
+```
+
+
+
+```
+
+```
+
+
+
+```
+
+```
+
+
 
 
 ### Create a secrets folder and put the google credentials inside:
