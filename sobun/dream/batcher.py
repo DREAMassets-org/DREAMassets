@@ -3,6 +3,13 @@
 import sqlite3
 
 
+def dbconnect(name=None):
+    if not name:
+        name = 'measurements.db'
+
+    return sqlite3.connect(name)
+
+
 def create_schema(dbconn):
     SCHEMA = """
     CREATE TABLE IF NOT EXISTS measurements(
@@ -60,7 +67,7 @@ if __name__ == "__main__":
 
     args = docopt(USAGE)
 
-    dbconn = sqlite3.connect('measurements.db')
+    dbconn = dbconnect()
 
     if args['--reset']:
         dbconn.execute('DROP TABLE measurements')
