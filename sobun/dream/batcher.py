@@ -21,26 +21,30 @@ def create_schema(dbconn):
     dbconn.commit()
 
 
-def insert(packet, cursor=None):
+def insert(row, cursor):
     sql = """
         INSERT OR IGNORE INTO measurements
         (
             batch_id,
-            tag_id,
             timestamp,
-            payload,
+            tag_id,
+            measurements,
+            hci,
+            rssi,
             synced
         )
         VALUES
         (
             :batch_id,
-            :tag_id,
             :timestamp,
-            :payload,
+            :tag_id,
+            :measurements,
+            :hci,
+            :rssi,
             :synced
         )
     """
-    cursor.execute(sql, packet)
+    cursor.execute(sql, row)
 
 
 USAGE = """
@@ -56,22 +60,22 @@ if __name__ == "__main__":
 
     args = docopt(USAGE)
 
-    if args['--reset']:
-        dbconn = sqlite3.connect('measurements.db')
+    dbconn = sqlite3.connect('measurements.db')
 
+    if args['--reset']:
         dbconn.execute('DROP TABLE measurements')
         dbconn.commit()
-
         create_schema(dbconn)
     else:
-        dbconn = sqlite3.connect('measurements.db')
-        payload = {
+        row = {
                 "batch_id": 1,
-                "tag_id": "abc",
                 "timestamp": 123,
-                "payload": 'abcdef',
+                "tag_id": "abc",
+                "measurements": 'abcdef',
+                "rssi": -54,
+                "hci": 0,
                 "synced": False
                 }
         cursor = dbconn.cursor()
-        insert(payload, cursor=cursor)
-        conn.commit()
+        insert(row, cursor=cursor)
+        dbconn.commit()
