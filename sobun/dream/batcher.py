@@ -79,3 +79,5 @@ if __name__ == "__main__":
         cursor = dbconn.cursor()
         insert(row, cursor=cursor)
         dbconn.commit()
+
+    dbconn.close()
