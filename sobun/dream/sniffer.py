@@ -25,7 +25,7 @@ from bluepy.btle import Scanner, DefaultDelegate
 
 # sniffer.py pushes data into a queue that syncer.py pops
 # syncer runs the celery worker using the redis queue: https://celery.readthedocs.io/en/latest/getting-started/first-steps-with-celery.html#first-steps
-from dream.syncer import push
+from dream.syncer import batch
 
 
 def extract_packet_from_bleAdvertisement(bleAdvertisement):
@@ -80,7 +80,8 @@ class PushDelegate(DefaultDelegate):
         if packet:
             if is_fujitsu_tag(packet):
                 #push the packet into the redis broker queue for a celery worker to handle asynchronously
-                push.delay(packet, self.hci)
+                # push.delay(packet, self.hci)
+                batch.delay(packet, self.hci)
                 print('push packet from HCI {hci} to the celery queue'.format(hci=self.hci))
 
 
