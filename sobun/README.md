@@ -17,7 +17,7 @@ We're using [bluepy](https://ianharvey.github.io/bluepy-doc/index.html) to inter
 Here's the relevant data in the `bleAdvertisement`: 
 
 * `addr` is a 6-byte (12-character) MAC **address** of the BLE device, which is the `tag_ID` in DREAM. 
-* `rssi` is the 1-byte (2-character) Received Signal Strength Indicator, a relative metric that's unique to RasPi.
+* `rssi` is the 1-byte (2-character) Received Signal Strength Indicator, a relative metric.
 * `mfr_data` is 16-byte (32-character) blob of hex data defined by the manufacturer. For Tags in DREAM, `mfr_data` looks like `5900 010003000300 1d04 5900 0a00 4608` where:
   * `5900` is junk 
   * `010003000300` is the unique identifier for the Tags
@@ -26,19 +26,19 @@ Here's the relevant data in the `bleAdvertisement`:
 Here's the data when `sniffer.py` creates a **packet**: 
 
 * `tag_ID ` a unique identifier, the BLE MAC address
-* `rssi` signal strength
 * `timestamp` when the BLE advertisement arrived at the Hub
+* `rssi` signal strength
+* *`hci` is the host-control interface number of the BLE chip*
 * `mfr_data` in hex which includes an identifier and measurements
 
 
 Here's the data when `syncer.py`creates a **payload**:
 
 * `tag_ID` 
-* `rssi` 
 * `timestamp`
+* `rssi` 
+* *`hci` is the host-control interface number of the BLE chip*
 * `measurements` in hex which are just 16 characters (8 bytes) of temperature and acceleration data.
-
-
 
 ## Latest architecture
 We're using a queue to decouple sniffing BLE from publishing to the cloud.  
@@ -100,6 +100,34 @@ value: 750042040180607c6456361fd97e6456361fd801000000000000
 
 
 # Build a Hub from Scratch
+
+The easiest way to interface with the RasPi by physically attaching an ethernet cable between the RasPi and your MacBook. On your MacBook enable `Internet Sharing` per [this tutorial](https://medium.com/@tzhenghao/how-to-ssh-into-your-raspberry-pi-with-a-mac-and-ethernet-cable-636a197d055). The tutorial goes into detail on using `nmap` to find your RasPi, but it's easiest to just SSH in:
+
+```
+ssh pi@raspberrypi.local
+```
+
+Where the RasPi's default `hostname` is `raspberrypi` but you can change it to `sueno` or whatever you like. 
+
+
+You can also SSH into the RasPi by connecting your laptop and the RasPi to the same WiFi network. When connected you can try using `ssh pi@sueno.local`. However, sometimes the router changes the mapping between the `hostname` and IP address. When that happens you can use the LAN IP address. Search for the devices on the LAN using:
+
+```
+ifconfig
+```
+to get the IP address of the LAN. Something like `10.4.8.1`. Then put that into `nmap`: 
+
+```
+nmap -sn 10.4.8.0/24
+```
+
+You can then run `arp` to see just the IP addresses of the active devices:
+```
+arp -a
+```
+
+So you could `ssh pi@10.4.8.68`.  There's a mapping from `sueno.local` to `10.4.8.68` that sometimes breaks, so by going direct to IP address, you can work around the problem.  Annoyingly, the WiFi method doesn't always work, which is why ethernet cable is easiest. 
+
 
 ## Provisioning RasPi: Get the packages
 The DREAM project uses Linux on the Raspberry Pi.  Disable Wolfram since it comes pre-loaded and it's ridiculously slow to update (less than 100kb/sec) and not used in this project. 
@@ -227,6 +255,7 @@ cd sobun
 ```
 virtualenv venv
 ```
+_Debug_: This creates a file structure based on the current directory and path. If you change any of those directory names, it'll break the `venv`. 
 
 Now activate the `venv`:
 
@@ -245,11 +274,13 @@ Install the requirements:
 pip install -r requirements.txt
 ```
 
-_Debug:_ The `sniffer.py` and `syncer.py` scripts must be run from the virtual environment. For deployment, DREAM uses systemd to launch the `dream-sniffer@{0..3}.service` and `dream-syncer.service`, so it might not seem obvious that the virtual environment is important, but it's crucial.
+_Debug:_ If you try to install requirements without `virtualenv`, don't worry because it'll fail. (you'd need to have used `sudo`). Just `activate` and install again.
+
+_Debug:_ The `sniffer.py` and `syncer.py` scripts must be run from the virtual environment. For deployment, DREAM uses `systemd` to launch the `dream-sniffer@{0..3}.service` and `dream-syncer.service`, so it might not seem obvious that the virtual environment is important, but it's crucial.
 
 
 ### Deployment
-From the `sobun/` folder...
+From the `dream.git/` folder...
 
 Deploy the network manager to restart the sniffer and syncer when there's a change to the network, i.e., the cellular connection drops and then resumes.
 
@@ -262,12 +293,7 @@ sudo chmod +x /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
 
 ```
 
-Deploy the services to start and stop the Hub only during meaningful hours
-```
-./peak-hour.sh
-```
-
-Deploy the services to start and stop the sniffer and syncer automatically with a deamon
+Deploy the services to start and stop the sniffer and syncer automatically with a deamon. Deploy the services to start and stop the Hub only during meaningful hours. This also clears out any queued up data: 
 
 ```
 ./pristine.sh
@@ -292,11 +318,10 @@ sudo reboot
 ```  
 
 Wait for the USB light to flash green and then SSH back into the Pi.  Wait for the light on the SORACOM to go blue and check whether `ifconfig` shows `ppp0` by running the command:
+
 ```  
 ifconfig
 ```  
-
-_Debug_: If you have trouble SSH'ing into your Hub using `ssh pi@sueno.local` you can use the LAN IP address -- in the example above that's `inet 10.4.8.68`. So you could `ssh pi@10.4.8.68`.  There's a mapping from `sueno.local` to `10.4.8.68` that sometimes breaks, so by going direct to IP address, you can work around the problem.  
 
 Run the following commands to grab and execute Soracom's helper script. This will make Soracom cell the default internet connection on your Hub.
 
@@ -391,283 +416,10 @@ Run the `healthz` script, which returns a list of Hubs and a count of their payl
 python -m dream.healthz
 ```  
 
-
-
-
-
-
------------------------------
-
-## Running the python script
-DREAM's python screen needs `redis` and `virtualenv` to run properly.  
-
-
-### Configure Redis
-
-Per [StackOverflow](https://stackoverflow.com/a/49839193/177298), we need to set `vm.overcommit_memory=1` so redis won't fail when it snapshots the data:
-
-Modify the `/etc/sysctl.conf` by adding:
-
-```
-vm.overcommit_memory=1
-```
-
-Then restart sysctl with:
-```
-sudo sysctl -p /etc/sysctl.conf
-```
-
-
--------------------------
-## for setit and forgetit
-### these instructions will change after we harden deployment
-
-
-install google pubsub
-```
-sudo pip install google-cloud-pubsub
-```
-
-```
-sudo apt-get install libglib2.0-dev -y
-```
-
-
-
-```
-
-```
-
-
-
-```
-
-```
-
-
-
-
-### Create a secrets folder and put the google credentials inside:
-
-```
-cd
-```
-
-
-```
-mkdir secrets
-```
-
-_From your laptop_
-
-```
-MacBook:Desktop user$ scp dream-assets-project-aa551100cc66.json pi@sueno.local:~/secrets/
-```
-
-
-Back on the RasPi
-```
-cd secrets
-```
-
-```
-ls
-```
-```
-mv dream-assets-project-aa551100cc66.json google-credentials.secret.json
-```
-
-
-
-## Setup code for DREAM
-
 Check what's running -- we're daemonizing, so we need to explicitly look! 
 
 ```
 ps -ef | grep pyth
-```
-
-Make `repo` folder:
-
-```
-cd
-```
-```
-mkdir repo
-```
-```
-cd repo
-```
-
-```
-git clone https://github.com/DREAMassets-org/DREAMassets.git
-```
-
-```
-pi@forgetit:~ $ mkdir repo
-pi@forgetit:~ $ cd repo/
-pi@forgetit:~/repo $ git clone https://github.com/DREAMassets-org/DREAMassets.git
-Cloning into 'DREAMassets'...
-```
-
-Rename `DREAMassets` folder:
-
-```
-mv DREAMassets/ dream.git
-```
-
-Switch to the `hardening` branch:
-
-```
-pi@forgetit:~/repo/dream.git $ git branch
-* master
-pi@forgetit:~/repo/dream.git $
-pi@forgetit:~/repo/dream.git $ git checkout hardening
-Branch hardening set up to track remote branch hardening from origin.
-Switched to a new branch 'hardening'
-pi@forgetit:~/repo/dream.git $ git branch
-* hardening
-  master
-pi@forgetit:~/repo/dream.git $
-```
-
-Install packages:
-
-```
-sudo apt-get install redis-server -y
-```
-```
-sudo pip install virtualenv   
-```
-
-Create the virtual environment from `sobun` where we run everything:
-
-```
-cd sobun
-```
-
-```
-virtualenv venv
-```
-
-```
-pi@forgetit:~/repo/dream.git/sobun $ ls
-dream  provision  README.md  README_PI_PROVISION.md  requirements.txt
-pi@forgetit:~/repo/dream.git/sobun $ virtualenv venv
-New python executable in /home/pi/repo/dream.git/sobun/venv/bin/python
-```
-
-Now activate the `venv`:
-
-```
-source venv/bin/activate
-```
-
-Install the requirements:
-
-```
-
-(venv) pi@forgetit:~/repo/dream.git/sobun $ ls
-dream  provision  README.md  README_PI_PROVISION.md  requirements.txt  venv
-```
-```
-pip install -r requirements.txt
-```
-
-##change from previous readme:
-###we no longer launch the sniffer script directly 
-that was just development purposes
-
-Check the status of the queue
-
-```
-redis-cli llen celery
-```
-
-If it's not empty, purge it. Note you need to be in the `sobun` folder, or wherever you created the queue:
-
-```
-celery purge -A dream.syncer -f
-```
-
-Go to the `dream.git` folder and run the daemonize script: 
-
-```
-~/repo/dream.git 
-```
-
-```
-./daemonize.sh
-```
-
-
-```
-(venv) pi@forgetit:~/repo/dream.git $ ls
-bin              daemonize.sh          dream-sniffer.service  events_report_scheduler  Gemfile       lib   Makefile  README.md  sobun    test
-cloud_functions  dream_dummy_data.csv  dream-syncer.service   example.env.sh           Gemfile.lock  logs  Rakefile  secrets    soracom
-(venv) pi@forgetit:~/repo/dream.git $
-(venv) pi@forgetit:~/repo/dream.git $ ./daemonize.sh
-Created symlink /etc/systemd/system/default.target.wants/dream-sniffer.service → /etc/systemd/system/dream-sniffer.service.
-Created symlink /etc/systemd/system/multi-user.target.wants/dream-syncer.service → /etc/systemd/system/dream-syncer.service.
-(venv) pi@forgetit:~/repo/dream.git $
-```
-
-Go to the `provision/` folder, copy the file to dispatch the script on network change, and make it executable:
-
-```
-cd sobun/provision/
-```
-
-```
-sudo cp 95.restart_dream_syncer.sh /etc/NetworkManager/dispatcher.d
-```
-
-```
-sudo chmod +x /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
-```
-
-If you have a question, there're instructions in the file itself:
-
-```
-(venv) pi@forgetit:~/repo/dream.git/sobun/provision $ ls
-95.restart_dream_syncer.sh
-(venv) pi@forgetit:~/repo/dream.git/sobun/provision $ cat 95.restart_dream_syncer.sh
-#!/bin/bash
-
-# Copy this file to this directory: /etc/NetworkManager/dispatcher.d
-# Run: chown root:root /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
-# Run: chmod +x /etc/NetworkManager/dispatcher.d/95.restart_dream_syncer.sh
-
-
-IF=$1
-STATUS=$2
-
-logger -s "DREAM: $IF status is now $STATUS"
-systemctl restart dream-syncer.service
-logger -s "DREAM: dream-syncer has been restarted"
-```
-
-Tada :tada: You're now gathering BLE advertisements and sending payloads to the cloud. You can see this by checking the logs for `sniffer` and `syncer`:
-
-```
- sudo systemctl status dream-sniffer
-```
-Which returns
-
-```
-(venv) pi@forgetit:~/repo/dream.git/sobun/provision $ sudo systemctl status dream-sniffer
-● dream-sniffer.service - dream-sniffer
-   Loaded: loaded (/etc/systemd/system/dream-sniffer.service; enabled; vendor preset: enabled)
-   Active: active (running) since Fri 2018-10-05 11:44:50 PDT; 7min ago
- Main PID: 3327 (python)
-   CGroup: /system.slice/dream-sniffer.service
-           ├─3327 ./venv/bin/python -m dream.sniffer 0
-           └─3347 /home/pi/repo/dream.git/sobun/venv/local/lib/python2.7/site-packages/bluepy/bluepy-helper 0
-
-Oct 05 11:49:35 forgetit dream-sniffer.service[3327]: push packet to the celery queue
-Oct 05 11:49:35 forgetit dream-sniffer.service[3327]: push packet to the celery queue
-Oct 05 11:51:39 forgetit dream-sniffer.service[3327]: push packet to the celery queue
-(venv) pi@forgetit:~/repo/dream.git/sobun/provision $
 ```
 
 Check on the syncer daemon service:
@@ -682,170 +434,7 @@ Use the `watch` command to see the service send each packet:
 watch -n0.5 sudo systemctl status dream-syncer.service
 ```
 
-## Monitor delivery to the cloud
-Go look in Google BigQuery and see your data! 
-
-```
-SELECT count(*) FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "ruya";
-```
-
-###From the command line:
-
-Navigate to the `sobun` folder
-
-```  
-cd ~/Documents/DREAM\ -\ data\ rules\ everything\ around\ me/code_for_DREAMassets/sobun/
-```  
-
-If you haven't already, install the `virtualenv` package: 
-```  
-sudo pip install virtualenv
-```  
-
-If it doesn't already exist, create the `venv` subfolder:
-
-```  
-virtualenv venv
-```  
-
-Startup (activate) the virtual environment
-
-```  
-source venv/bin/activate
-```  
-
-Note, you can also stop the virtual environment with simply:
-
-```  
-deactivate
-```  
-
-With the `venv` working (as shown in the command line), install the python requirements:
-
-```  
-pip install -r requirements.txt
-```  
-
-**Copy** the Google Cloud credentials in the `sobun/` folder **and then rename** them:
-```
-mv dream-assets-project-bb550077d3c3.json google-credentials.secret.json
-```
-
-Set the virtual environment for Google Cloud credentials: 
-```  
-source .envrc
-```  
-
-Run the `healthz` script, which returns a list of Hubs and a count of their payloads in BigQuery: 
-```  
-python -m dream.healthz
-```  
-
-
--------------------------
-
-
-Here's the setup:
-
-Close the git repo:
-```  
-git clone...
-```  
-
-Install redis, the queuing package: 
-```
-sudo apt-get install redis-server -y 
-```  
-
-Install virtualenv, the virtual environment package:
-
-```  
-sudo pip install virtualenv   
-```  
-
-
-Go into the directory where you're going to run the script (in our case `sobun`) since you're about to create an important subdirectory. Install virtualenv in the `venv` subfolder:
-
-```  
-virtualenv venv
-```  
-
-Activate virtualenv:
-
-```  
-source venv/bin/activate   
-```  
-
-This should add (venv) to the prompt so it now looks something like: `(venv) pi@sueno:~/DREAMassets/sobun $`  
-
-_Debug_: If you need to turn off `venv` just enter the command `deactivate`. 
-
-Install the requirements for python:
-
-```  
- pip install -r requirements.txt
-```  
-_Debug:_ If you try to install requirements without `virtualenv`, don't worry because it'll fail. (you'd need to have used `sudo`). Just `activate` and install again.
-
-Congrats! :tada: you're now ready to run the python scrips.  For the primary sniffing script in the `dream` directory, run:
-
-```
- sudo ./venv/bin/python -m dream.sniffer 0 
-```
-Where `-m dream.sniffer` is python convention and `0` refers to the BLE chip built into the RasPi at `hci0`.  If you want to use a BLE USB dongle, change the value to `1` for `hci1`. By default, the sniffer puts BLE packets into a redis queue called `celery`. 
-
-You can see the size of the queue by opening another terminal. To see the list length (`llen`) of the queue, run:
-
-``` 
-redis-cli llen celery 
-```
-
-You'll probably want to watch the queue filling with packets so run:
-
-``` 
-watch -n0.2 redis-cli llen celery 
-```
-
-By default, `watch` runs a command every 2 seconds. Use `-n` to set the time interval of your choosing. 
-
-
-
-----------------------
-
-### Misc notes and UNIX commands
-
-Purge celery when there's lots of old data in the queue bc that can screw up Google Cloud.  Note that you need to be in the virtualenv, as shown by `venv`. A simple `purge celery` doesn't work, you need to specify: 
- 
-```  
-celery purge -A dream.syncer -f
-```  
-
-DREAM uses `systemctl` to control the services that sniff BLE advertisements (`bleAdvertisement`) and sync payloads (`payload`) to Google Cloud via PubSub.   
-
-Check the status of the DREAM services:
-
-```  
-sudo systemctl | grep dream
-```  
-
-Stop the `dream-syncer.service` service: 
-
-```  
-sudo systemctl stop dream-syncer.service 
-```  
-
-Start the service: 
-
-```  
-sudo systemctl start dream-syncer.service 
-```  
-
-Restart the service: 
-
-```  
-sudo systemctl restart dream-syncer.service 
-```  
-
+###Other notes
 
 View the `.envrc` file that shows where to find credentials for Google Cloud:
 
@@ -859,24 +448,6 @@ We looked at system files `networking.service` and `NetworkManager-wait-online.s
 ```  
 cd /etc/systemd/system/network-online.target.wants/
 ```  
-
-We run the daemonizer as a shell script: 
-
-```  
-cd ~/repo/dream.git/
-./daemonize.sh 
-```  
-
-
-----------------------
-
-----------------------
-
-----------------------
-
-##Rit's notes
-Decouple packects data collection from data publishing
-
-At a high level, we will put BLE packets into a redis queue. We publish the data by popping off the queue and send the data to Google Cloud PubSub.
-
-Edit from OSX using `sshfs`
+ 
+# Google Cloud
+Write up the role of Google Cloud here.  
