@@ -62,13 +62,9 @@ def create_unique_batch(dbconn, batch_size=20000):
         UPDATE measurements SET batch_id = (SELECT MAX(batch_id)+1 from measurements)
         WHERE batch_id = 0
         ORDER BY timestamp
-        limit :batch_size
+        LIMIT :batch_size
     """
-
-    values = dict(
-            batch_size=batch_size, 
-            )
-    cursor.execute(sql, values)
+    cursor.execute(sql, dict(batch_size=batch_size))
     print('batch created')
 
 
