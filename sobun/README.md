@@ -458,16 +458,16 @@ The DREAM project uses these products in the Google Cloud Platform (GCP):
 *  **`Source Repository`** The source code for the `cloud function` is stored here.
 
   
-###PubSub
+### PubSub
 DREAM uses the topic `projects/dream-assets-project/topics/tags-dev` where the Hub publishes payloads and the Cloud Function subscribes to payloads. 
 
-###Cloud Function
+### Cloud Function
 The Cloud function is in `/sobun/dream/drainer`. It receives a payload, processes it into meaningful measurement values, and inserts the values as a row in the database. 
 
-###Source Repository
+### Source Repository
 The source repo holds the code. To update the source repo manually, click `edit` and `save`. 
 
-###Big Query
+### Big Query
 Big Query holds our data. Here are relevant queries we use:
 
 ```
