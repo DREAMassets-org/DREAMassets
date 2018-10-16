@@ -56,7 +56,7 @@ def insert(row, cursor):
     cursor.execute(sql, row)
 
 
-def create_unique_batch(dbconn, batch_size=100000):
+def create_unique_batch(dbconn, batch_size=20000):
     cursor = dbconn.cursor()
     sql = """
         UPDATE measurements SET batch_id = (SELECT MAX(batch_id)+1 from measurements)
@@ -69,6 +69,7 @@ def create_unique_batch(dbconn, batch_size=100000):
             batch_size=batch_size, 
             )
     cursor.execute(sql, values)
+    print('batch created')
 
 
 def publish_batch(dbconn, batch_id):
@@ -101,7 +102,7 @@ def publish_batch(dbconn, batch_id):
 
 
 USAGE = """
-Usage: dream.batcher  [--reset]
+Usage: dream.batcher  [--reset|--set-batch-id]
 
 Options:
     --reset     Reset the datebase
@@ -119,6 +120,9 @@ if __name__ == "__main__":
         dbconn.execute('DROP TABLE IF EXISTS measurements')
         dbconn.commit()
         create_schema(dbconn)
+    elif args['--set-batch-id']:
+        create_unique_batch(dbconn)
+        dbconn.commit()
     else:
         row = {
                 "batch_id": 1,
@@ -131,7 +135,6 @@ if __name__ == "__main__":
                 }
         # cursor = dbconn.cursor()
         # insert(row, cursor=cursor)
-        # create_unique_batch(dbconn, batch_size=10)
         # dbconn.commit()
 
         batch_id = 0
