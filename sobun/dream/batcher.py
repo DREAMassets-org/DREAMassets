@@ -72,6 +72,8 @@ def create_unique_batch(dbconn, batch_size=100000):
 
 
 def publish_batch(dbconn, batch_id):
+    from dream.gpub import send_batch
+
     sql = """
         SELECT
             timestamp,
@@ -81,18 +83,20 @@ def publish_batch(dbconn, batch_id):
             rssi
         FROM measurements
         WHERE batch_id = :batch_id
-        limit 222000
+        ORDER BY timestamp
+        limit 20000
     """
+    #limit 222000
     cursor = dbconn.cursor()
     rows = cursor.execute(sql, dict(batch_id=batch_id))
     lines = []
     for row in rows:
         lines.append(",".join(map(str, row)))
     payload = "\n".join(lines)
-    with open('payloads.txt', 'w') as txt:
-        txt.write(payload)
 
-    print len(payload)
+    msg_id = send_batch(payload)
+    if msg_id:
+        print('TODO: delete batch from the db: ', msg_id)
 
 
 

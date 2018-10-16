@@ -70,6 +70,12 @@ def clean(packet):
     return payload
 
 
+def send_batch(payload):
+    publisher = pubsub.PublisherClient()
+    future = publisher.publish(topic, payload, hub_id=HUB_ID)
+    return future.result()
+
+
 # for development purposes: 
 # the code below will only be run if we invoke it from the command line: python -m dream.gpub
 # this block of code allows us to test gpub from our laptop, without a RasPi 
