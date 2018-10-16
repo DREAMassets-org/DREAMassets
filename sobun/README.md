@@ -28,7 +28,7 @@ Here's the data when `sniffer.py` creates a **packet**:
 * `tag_ID ` a unique identifier, the BLE MAC address
 * `timestamp` when the BLE advertisement arrived at the Hub
 * `rssi` signal strength
-* *`hci` is the host-control interface number of the BLE chip*
+* `hci` is the host-control interface number of the BLE chip
 * `mfr_data` in hex which includes an identifier and measurements
 
 
@@ -37,7 +37,7 @@ Here's the data when `syncer.py`creates a **payload**:
 * `tag_ID` 
 * `timestamp`
 * `rssi` 
-* *`hci` is the host-control interface number of the BLE chip*
+* `hci` is the host-control interface number of the BLE chip
 * `measurements` in hex which are just 16 characters (8 bytes) of temperature and acceleration data.
 
 ## Latest architecture
@@ -468,7 +468,14 @@ The Cloud function is in `/sobun/dream/drainer`. It receives a payload, processe
 The source repo holds the code. To update the source repo manually, click `edit` and `save`. 
 
 ### Big Query
-Big Query holds our data. Here are relevant queries we use:
+Big Query holds our data. We created the `dream_assets_dataset` which contains the `dream_values_table`. When you create the table, under schema, choose "Edit as text" and insert the following for the schema:
+
+```
+hub_id:STRING,tag_id:STRING,temperature:FLOAT,x_accel:FLOAT,y_accel:FLOAT,z_accel:FLOAT,rssi:INTEGER,hci:INTEGER,timestamp:INTEGER
+```
+
+
+Here are relevant queries we use:
 
 ```
 SELECT * FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "mafarki" and timestamp > 1539644084
@@ -491,6 +498,21 @@ delete FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` w
 Select DATETIME ( TIMESTAMP_seconds ( max (timestamp) ), "America/Los_Angeles") FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "ruya"
 ```
 
+Try a more informative query like the following (you need to update `hub id`, `tag id`, and `timestamp` values)
+
+```
+SELECT
+  DATETIME(PARSE_TIMESTAMP("%s", cast(measurements.timestamp as string)), "America/Los_Angeles") as ts_datetime,
+  measurements.*
+FROM
+  dream_assets_dataset.measurements_table measurements,
+WHERE
+  measurements.timestamp > 1532538000 # 10am July 25 2018 PST
+  and measurements.timestamp < 1532545200 # 12am July 25 2018 PST
+  and measurements.tag_id='<tag id>'
+  and measurements.hub_id='<hub id>'
+ORDER BY timestamp DESC
+```
 
 
 
