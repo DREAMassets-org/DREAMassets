@@ -54,6 +54,21 @@ def insert(row, cursor):
     cursor.execute(sql, row)
 
 
+def create_unique_batch(dbconn, batch_size=100000):
+    cursor = dbconn.cursor()
+    sql = """
+        UPDATE measurements SET batch_id = (SELECT MAX(batch_id)+1 from measurements)
+        WHERE batch_id = 0
+        ORDER BY timestamp
+        limit :batch_size
+    """
+
+    values = dict(
+            batch_size=batch_size, 
+            )
+    cursor.execute(sql, values)
+
+
 USAGE = """
 Usage: dream.batcher  [--reset]
 
@@ -83,8 +98,9 @@ if __name__ == "__main__":
                 "hci": 0,
                 "synced": False
                 }
-        cursor = dbconn.cursor()
-        insert(row, cursor=cursor)
+        # cursor = dbconn.cursor()
+        # insert(row, cursor=cursor)
+        create_unique_batch(dbconn, batch_size=10)
         dbconn.commit()
 
     dbconn.close()
