@@ -35,7 +35,6 @@ def insert(row, cursor):
     sql = """
         INSERT OR IGNORE INTO measurements
         (
-            batch_id,
             timestamp,
             tag_id,
             measurements,
@@ -45,7 +44,6 @@ def insert(row, cursor):
         )
         VALUES
         (
-            :batch_id,
             :timestamp,
             :tag_id,
             :measurements,

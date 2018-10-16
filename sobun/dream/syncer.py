@@ -34,13 +34,11 @@ def batch(packet, hci=0):
     mfr_data = packet.pop('mfr_data')
     measurements = mfr_data[-16:]
     row = {
-        "batch_id": 0,
         "timestamp": packet["timestamp"],
         "tag_id": packet["tag_id"],
         "measurements": measurements,
         "hci": hci,
-        "rssi": packet["rssi"],
-        "synced": False
+        "rssi": packet["rssi"]
     }
     insert(row, dbconn.cursor())
     print('inserting: ', row)
