@@ -470,37 +470,37 @@ The source repo holds the code. To update the source repo manually, click `edit`
 ### Big Query
 Big Query holds our data. We created the `dream_assets_dataset` which contains the `dream_values_table`. When you create the table, under schema, choose "Edit as text" and insert the following for the schema:
 
-```
+```sql
 hub_id:STRING,tag_id:STRING,temperature:FLOAT,x_accel:FLOAT,y_accel:FLOAT,z_accel:FLOAT,rssi:INTEGER,hci:INTEGER,timestamp:INTEGER
 ```
 
 
 Here are relevant queries we use:
 
-```
+```sql
 SELECT * FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "mafarki" and timestamp > 1539644084
 ```
 
-```
+```sql
 SELECT * FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where timestamp > 1539625646 and timestamp < 1539625746
 ```
 
 
-```
+```sql
 SELECT t0.hub_id, SUM(t0.rssi) AS t0_qt_ehp4ieeurb, COUNT(FORMAT_TIMESTAMP('%Y%m%d', TIMESTAMP_MICROS(t0.timestamp*1000000))) AS t0_qt_ls5hqceurb, APPROX_COUNT_DISTINCT(FORMAT_TIMESTAMP('%Y%m%d', TIMESTAMP_MICROS(t0.timestamp*1000000))) AS t0_qt_x9b3beeurb FROM `dream-assets-project._c45901274641ddf047eeb498ee472b0d7d5b0321.anon08738b00_6572_422c_9c8e_ed8df51b3ef8` AS t0 GROUP BY t0.hub_id ORDER BY t0_qt_ls5hqceurb DESC;
 ```
 
-```
+```sql
 delete FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "sleep"
 ```
 
-```
+```sql
 Select DATETIME ( TIMESTAMP_seconds ( max (timestamp) ), "America/Los_Angeles") FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "ruya"
 ```
 
 Try a more informative query like the following (you need to update `hub id`, `tag id`, and `timestamp` values)
 
-```
+```sql
 SELECT
   DATETIME(PARSE_TIMESTAMP("%s", cast(measurements.timestamp as string)), "America/Los_Angeles") as ts_datetime,
   measurements.*
