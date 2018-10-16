@@ -7,7 +7,9 @@ def dbconnect(name=None):
     if not name:
         name = 'measurements.db'
 
-    return sqlite3.connect(name)
+    conn = sqlite3.connect(name)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 def create_schema(dbconn):
@@ -69,6 +71,31 @@ def create_unique_batch(dbconn, batch_size=100000):
     cursor.execute(sql, values)
 
 
+def publish_batch(dbconn, batch_id):
+    sql = """
+        SELECT
+            timestamp,
+            tag_id,
+            measurements,
+            hci,
+            rssi
+        FROM measurements
+        WHERE batch_id = :batch_id
+        limit 222000
+    """
+    cursor = dbconn.cursor()
+    rows = cursor.execute(sql, dict(batch_id=batch_id))
+    lines = []
+    for row in rows:
+        lines.append(",".join(map(str, row)))
+    payload = "\n".join(lines)
+    with open('payloads.txt', 'w') as txt:
+        txt.write(payload)
+
+    print len(payload)
+
+
+
 USAGE = """
 Usage: dream.batcher  [--reset]
 
@@ -100,7 +127,10 @@ if __name__ == "__main__":
                 }
         # cursor = dbconn.cursor()
         # insert(row, cursor=cursor)
-        create_unique_batch(dbconn, batch_size=10)
-        dbconn.commit()
+        # create_unique_batch(dbconn, batch_size=10)
+        # dbconn.commit()
+
+        batch_id = 0
+        publish_batch(dbconn, batch_id)
 
     dbconn.close()
