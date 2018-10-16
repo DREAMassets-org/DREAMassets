@@ -80,7 +80,6 @@ class PushDelegate(DefaultDelegate):
         if packet:
             if is_fujitsu_tag(packet):
                 #push the packet into the redis broker queue for a celery worker to handle asynchronously
-                # push.delay(packet, self.hci)
                 batch.delay(packet, self.hci)
                 print('push packet from HCI {hci} to the celery queue'.format(hci=self.hci))
 
