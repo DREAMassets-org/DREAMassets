@@ -43,4 +43,6 @@ def batch(packet, hci=0):
         "synced": False
     }
     insert(row, dbconn.cursor())
+    print('inserting: ', row)
+    dbconn.commit()
     dbconn.close()

@@ -70,7 +70,7 @@ if __name__ == "__main__":
     dbconn = dbconnect()
 
     if args['--reset']:
-        dbconn.execute('DROP TABLE measurements')
+        dbconn.execute('DROP TABLE IF EXISTS measurements')
         dbconn.commit()
         create_schema(dbconn)
     else:
