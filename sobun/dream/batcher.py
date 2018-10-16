@@ -99,9 +99,16 @@ def publish_batch(dbconn, batch_id):
         dbconn.commit()
 
 
+def publish_next_batch(dbconn):
+    cursor = dbconn.cursor()
+    res = cursor.execute("SELECT min(batch_id) FROM measurements WHERE batch_id > 0")
+    batch_id, = res.fetchone()
+    publish_batch(dbconn, batch_id)
+    print(batch_id)
+
 
 USAGE = """
-Usage: dream.batcher  [--reset|--set-batch-id]
+Usage: dream.batcher  [--reset|--set-batch-id|--next-batch]
 
 Options:
     --reset     Reset the datebase
@@ -122,6 +129,8 @@ if __name__ == "__main__":
     elif args['--set-batch-id']:
         create_unique_batch(dbconn)
         dbconn.commit()
+    elif args['--next-batch']:
+        publish_next_batch(dbconn)
     else:
         row = {
                 "batch_id": 1,
@@ -136,7 +145,7 @@ if __name__ == "__main__":
         # insert(row, cursor=cursor)
         # dbconn.commit()
 
-        batch_id = 1
-        publish_batch(dbconn, batch_id)
+        # batch_id = 1
+        # publish_batch(dbconn, batch_id)
 
     dbconn.close()
