@@ -450,4 +450,49 @@ cd /etc/systemd/system/network-online.target.wants/
 ```  
  
 # Google Cloud
-Write up the role of Google Cloud here.  
+The DREAM project uses these products in the Google Cloud Platform (GCP):
+
+* **`PubSub`** The Hubs publish data to a PubSub topic, which is the link between the Hubs and the Cloud. 
+* **`Cloud Function`** The Function detects a publication, modifies the data, and inserts it into DREAM's database.
+*  **`Big Query`** DREAM uses Big Query as its database. 
+*  **`Source Repository`** The source code for the `cloud function` is stored here.
+
+  
+###PubSub
+DREAM uses the topic `projects/dream-assets-project/topics/tags-dev` where the Hub publishes payloads and the Cloud Function subscribes to payloads. 
+
+###Cloud Function
+The Cloud function is in `/sobun/dream/drainer`. It receives a payload, processes it into meaningful measurement values, and inserts the values as a row in the database. 
+
+###Source Repository
+The source repo holds the code. To update the source repo manually, click `edit` and `save`. 
+
+###Big Query
+Big Query holds our data. Here are relevant queries we use:
+
+```
+SELECT * FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "mafarki" and timestamp > 1539644084
+```
+
+```
+SELECT * FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where timestamp > 1539625646 and timestamp < 1539625746
+```
+
+
+```
+SELECT t0.hub_id, SUM(t0.rssi) AS t0_qt_ehp4ieeurb, COUNT(FORMAT_TIMESTAMP('%Y%m%d', TIMESTAMP_MICROS(t0.timestamp*1000000))) AS t0_qt_ls5hqceurb, APPROX_COUNT_DISTINCT(FORMAT_TIMESTAMP('%Y%m%d', TIMESTAMP_MICROS(t0.timestamp*1000000))) AS t0_qt_x9b3beeurb FROM `dream-assets-project._c45901274641ddf047eeb498ee472b0d7d5b0321.anon08738b00_6572_422c_9c8e_ed8df51b3ef8` AS t0 GROUP BY t0.hub_id ORDER BY t0_qt_ls5hqceurb DESC;
+```
+
+```
+delete FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "sleep"
+```
+
+```
+Select DATETIME ( TIMESTAMP_seconds ( max (timestamp) ), "America/Los_Angeles") FROM `dream-assets-project.dream_assets_raw_packets.measurements_table` where hub_id = "ruya"
+```
+
+
+
+
+
+   
