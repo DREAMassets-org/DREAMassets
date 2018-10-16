@@ -15,18 +15,19 @@ def dbconnect(name=None):
 def create_schema(dbconn):
     SCHEMA = """
     CREATE TABLE IF NOT EXISTS measurements(
-        batch_id integer,
+        batch_id integer default 0,
         timestamp integer,
         tag_id text,
         measurements text,
         hci integer,
-        rssi integer,
-        synced boolean
+        rssi integer
     )
-
     """
-
     dbconn.execute(SCHEMA)
+
+    dbconn.execute("CREATE INDEX IF NOT EXISTS timestamp_idx on measurements (timestamp)")
+    dbconn.execute("CREATE INDEX IF NOT EXISTS batched_idx on measurements (batch_id)")
+    dbconn.execute("CREATE INDEX IF NOT EXISTS tag_idx on measurements (tag_id)")
     dbconn.commit()
 
 
