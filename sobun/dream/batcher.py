@@ -85,9 +85,7 @@ def publish_batch(dbconn, batch_id):
         FROM measurements
         WHERE batch_id = :batch_id
         ORDER BY timestamp
-        limit 20000
     """
-    #limit 222000
     cursor = dbconn.cursor()
     rows = cursor.execute(sql, dict(batch_id=batch_id))
     lines = []
@@ -97,7 +95,8 @@ def publish_batch(dbconn, batch_id):
 
     msg_id = send_batch(payload)
     if msg_id:
-        print('TODO: delete batch from the db: ', msg_id)
+        dbconn.execute("DELETE FROM measurements WHERE batch_id = :batch_id", dict(batch_id=batch_id))
+        dbconn.commit()
 
 
 
@@ -137,7 +136,7 @@ if __name__ == "__main__":
         # insert(row, cursor=cursor)
         # dbconn.commit()
 
-        batch_id = 0
+        batch_id = 1
         publish_batch(dbconn, batch_id)
 
     dbconn.close()
