@@ -39,8 +39,7 @@ def insert(row, cursor):
             tag_id,
             measurements,
             hci,
-            rssi,
-            synced
+            rssi
         )
         VALUES
         (
@@ -48,8 +47,7 @@ def insert(row, cursor):
             :tag_id,
             :measurements,
             :hci,
-            :rssi,
-            :synced
+            :rssi
         )
     """
     cursor.execute(sql, row)
@@ -133,8 +131,7 @@ if __name__ == "__main__":
                 "tag_id": "abc",
                 "measurements": 'abcdef',
                 "rssi": -54,
-                "hci": 0,
-                "synced": False
+                "hci": 0
                 }
         # cursor = dbconn.cursor()
         # insert(row, cursor=cursor)
