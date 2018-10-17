@@ -38,7 +38,11 @@ def run(data, context):
         bigquery_row = (tag_id, measurements, hub_id, int(timestamp), int(rssi), int(hci))
         rows.append(bigquery_row)
 
+    # BigQuery has a limit of 1000 insert
     # try to insert this row. If there're errors, return it as a list 
-    errors = client.insert_rows(table, rows)
+    errors = client.insert_rows(table, rows[0:1000])
+    assert errors == [], errors
+
+    errors = client.insert_rows(table, rows[1000:])
     # if the list isn't empty, raise an Assertion Error and use `errors` object as the message displayed 
     assert errors == [], errors
