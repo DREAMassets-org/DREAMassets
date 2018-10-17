@@ -40,9 +40,9 @@ def run(data, context):
 
     # BigQuery has a limit of 1000 insert
     # try to insert this row. If there're errors, return it as a list 
-    errors = client.insert_rows(table, rows[0:1000])
+    errors = client.insert_rows(table, rows[0:10000])
     assert errors == [], errors
 
-    errors = client.insert_rows(table, rows[1000:])
+    errors = client.insert_rows(table, rows[10000:])
     # if the list isn't empty, raise an Assertion Error and use `errors` object as the message displayed 
     assert errors == [], errors
