@@ -112,8 +112,35 @@ def publish_next_batch(dbconn):
         print("Nothing to batch yet")
 
 
+def generate_sample_payloads(dbconn):
+    cursor = dbconn.cursor()
+    sql = """
+        INSERT OR IGNORE INTO measurements
+        (
+            timestamp,
+            tag_id,
+            measurements,
+            hci,
+            rssi
+        )
+        VALUES
+        (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+        )
+    """
+    with open('fixtures/sample_rows.txt') as src:
+        lines = src.readlines()
+        rows = [row.strip().split(',') for row in lines]
+        cursor.executemany(sql, rows)
+    dbconn.commit()
+
+
 USAGE = """
-Usage: dream.batcher  [--reset|--set-batch-id|--next-batch]
+Usage: dream.batcher  [--reset|--set-batch-id|--next-batch|--genpayloads]
 
 Options:
     --reset     Reset the datebase
@@ -136,6 +163,9 @@ if __name__ == "__main__":
         dbconn.commit()
     elif args['--next-batch']:
         publish_next_batch(dbconn)
+    elif args['--genpayloads']:
+        for x in xrange(200):
+            generate_sample_payloads(dbconn)
     else:
         row = {
                 "batch_id": 1,
