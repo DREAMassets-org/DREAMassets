@@ -16,7 +16,7 @@ from google.cloud.pubsub import types
 HUB_ID = socket.gethostname()
 
 # The Hub publishes to this topic on PubSub 
-topic = "projects/dream-assets-project/topics/tags-dev"
+topic = "projects/dream-assets-project/topics/batched-payloads"
 
 # When the batch is created, it begins a countdown that publishes the batch
 # once sufficient time has elapsed (by default, this is 0.05 seconds).
