@@ -2,6 +2,7 @@
 
 sudo cp ./dream-sniffer@.service /etc/systemd/system/
 sudo cp ./dream-syncer.service /etc/systemd/system/
+sudo cp ./dream-batcher.service /etc/systemd/system/
 
 sudo systemctl daemon-reload
 
