@@ -7,7 +7,8 @@ def dbconnect(name=None):
     if not name:
         name = 'measurements.db'
 
-    conn = sqlite3.connect(name)
+    # Wait at most for 30 seconds for the lock to go away
+    conn = sqlite3.connect(name, timeout=30000)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -55,14 +56,19 @@ def insert(row, cursor):
 
 def create_unique_batch(dbconn, batch_size=20000):
     cursor = dbconn.cursor()
-    sql = """
-        UPDATE measurements SET batch_id = (SELECT MAX(batch_id)+1 from measurements)
-        WHERE batch_id = 0
-        ORDER BY timestamp
-        LIMIT :batch_size
-    """
-    cursor.execute(sql, dict(batch_size=batch_size))
-    print('batch created')
+    res = cursor.execute("SELECT count(*) FROM measurements WHERE batch_id = 0")
+    count, = res.fetchone()
+    if count > batch_size:
+        sql = """
+            UPDATE measurements SET batch_id = (SELECT MAX(batch_id)+1 from measurements)
+            WHERE batch_id = 0
+            ORDER BY timestamp
+            LIMIT :batch_size
+        """
+        cursor.execute(sql, dict(batch_size=batch_size))
+        print('batch created')
+    else:
+        print('{} more payloads is needed before batching'.format(batch_size - count))
 
 
 def publish_batch(dbconn, batch_id):
@@ -93,11 +99,17 @@ def publish_batch(dbconn, batch_id):
 
 
 def publish_next_batch(dbconn):
+    create_unique_batch(dbconn)
+    dbconn.commit()
+
     cursor = dbconn.cursor()
     res = cursor.execute("SELECT min(batch_id) FROM measurements WHERE batch_id > 0")
     batch_id, = res.fetchone()
-    publish_batch(dbconn, batch_id)
-    print(batch_id)
+    if batch_id:
+        publish_batch(dbconn, batch_id)
+        print("Published {}".format(batch_id))
+    else:
+        print("Nothing to batch yet")
 
 
 USAGE = """
