@@ -9,15 +9,16 @@ https://cloud.google.com/functions/docs/writing/background#functions_background_
 """
 
 import base64
-import json
 
 from google.cloud import bigquery
+
+import helpers
 
 client = bigquery.Client()
 
 # TODO put in config file too 
-dataset_id = 'dream_assets_raw_packets'
-table_id = 'measurements_table'
+dataset_id = 'dream_assets_dataset'
+table_id = 'dream_measurements_table'
 table_ref = client.dataset(dataset_id).table(table_id)
 table = client.get_table(table_ref)
 
@@ -26,21 +27,22 @@ table = client.get_table(table_ref)
 def run(data, context):
 
     print("data published: ", data)
+    attributes = data['attributes']
+    hub_id = attributes["hub_id"]
 
     # data['data'] is somehow base64 encoded
-    payload = base64.b64decode(data['data']).decode('utf-8')
-    row = json.loads(payload)
-    hub_id = row.get('hub_id', None)
-    tag_id = row['tag_id']
+    payloads = base64.b64decode(data['data']).decode('utf-8')
+    lines = payloads.split('\n')
+    rows = []
+    for line in lines:
+        row = line.split(',')
+        timestamp, tag_id, measurements, hci, rssi = row
+        bigquery_row = (tag_id, measurements, hub_id, int(timestamp), int(rssi), int(hci))
+        rows.append(bigquery_row)
 
-    #TODO process measurements into meaningful values here
-    measurements = row['measurements']
-    
-    timestamp = row['timestamp']
-    rssi = row['rssi']
-    rows = [(tag_id, measurements, hub_id, timestamp, rssi)]
-
-    # try to insert this row. If there're errors, return it as a list 
-    errors = client.insert_rows(table, rows)
-    # if the list isn't empty, raise an Assertion Error and use `errors` object as the message displayed 
-    assert errors == [], errors
+    # BigQuery has a limit of 10K insert at a time
+    batches = helpers.batch(rows, 10000)
+    for batch in batches:
+        # try to insert this row. If there're errors, return it as a list
+        errors = client.insert_rows(table, list(batch))
+        assert errors == [], errors
