@@ -12,6 +12,8 @@ import base64
 
 from google.cloud import bigquery
 
+import helpers
+
 client = bigquery.Client()
 
 # TODO put in config file too 
@@ -38,11 +40,9 @@ def run(data, context):
         bigquery_row = (tag_id, measurements, hub_id, int(timestamp), int(rssi), int(hci))
         rows.append(bigquery_row)
 
-    # BigQuery has a limit of 1000 insert
-    # try to insert this row. If there're errors, return it as a list 
-    errors = client.insert_rows(table, rows[0:10000])
-    assert errors == [], errors
-
-    errors = client.insert_rows(table, rows[10000:])
-    # if the list isn't empty, raise an Assertion Error and use `errors` object as the message displayed 
-    assert errors == [], errors
+    # BigQuery has a limit of 10K insert at a time
+    batches = helpers.batch(rows, 10000)
+    for batch in batches:
+        # try to insert this row. If there're errors, return it as a list
+        errors = client.insert_rows(table, list(batch))
+        assert errors == [], errors
