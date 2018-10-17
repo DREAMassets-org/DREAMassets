@@ -2,6 +2,9 @@
 
 # We run this script before creating a "sleep" Hub 
 
+# This will create/recreate the db schema
+. setup-sqlite-db.sh
+
 # Update the daemon services and peak hour timer services
 /home/pi/repo/dream.git/daemonize.sh
 /home/pi/repo/dream.git/peak-hour.sh
