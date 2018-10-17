@@ -25,8 +25,8 @@ table = client.get_table(table_ref)
 def run(data, context):
 
     print("data published: ", data)
-    print("context: ", context)
-    hub_id = "hub_id"
+    attributes = data['attributes']
+    hub_id = attributes["hub_id"]
 
     # data['data'] is somehow base64 encoded
     payloads = base64.b64decode(data['data']).decode('utf-8')
