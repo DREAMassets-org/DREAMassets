@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Ensure measurements.db is created and owned by user "pi"
+touch ./sobun/measurements.db
+
 sudo cp ./dream-sniffer@.service /etc/systemd/system/
 sudo cp ./dream-syncer.service /etc/systemd/system/
 sudo cp ./dream-batcher.service /etc/systemd/system/
