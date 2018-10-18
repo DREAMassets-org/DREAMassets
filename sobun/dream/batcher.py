@@ -32,7 +32,7 @@ def create_schema(dbconn):
     dbconn.commit()
 
 
-def insert(row, cursor):
+def insert(row_or_rows, cursor, many=False):
     sql = """
         INSERT OR IGNORE INTO measurements
         (
@@ -51,7 +51,10 @@ def insert(row, cursor):
             :rssi
         )
     """
-    cursor.execute(sql, row)
+    if many:
+        cursor.executemany(sql, row_or_rows)
+    else:
+        cursor.execute(sql, row_or_rows)
 
 
 def create_unique_batch(dbconn, batch_size=20000):
