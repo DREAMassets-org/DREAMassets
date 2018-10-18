@@ -57,7 +57,7 @@ def insert(row_or_rows, cursor, many=False):
         cursor.execute(sql, row_or_rows)
 
 
-def create_unique_batch(dbconn, batch_size=20000):
+def create_unique_batch(dbconn, batch_size=200):
     cursor = dbconn.cursor()
     res = cursor.execute("SELECT count(*) FROM measurements WHERE batch_id = 0")
     count, = res.fetchone()
@@ -86,13 +86,20 @@ def publish_batch(dbconn, batch_id):
             rssi
         FROM measurements
         WHERE batch_id = :batch_id
-        ORDER BY timestamp
+        ORDER BY tag_id
     """
     cursor = dbconn.cursor()
     rows = cursor.execute(sql, dict(batch_id=batch_id))
     lines = []
+    last_tag_id = None
     for row in rows:
-        lines.append(",".join(map(str, row)))
+        timestamp, tag_id, measurements, hci, rssi = row
+        if tag_id == last_tag_id:
+            tag_id = ""
+        else:
+            last_tag_id = tag_id
+        compacted_row = (timestamp, tag_id, measurements, hci, rssi)
+        lines.append(",".join(map(str, compacted_row)))
     payload = "\n".join(lines)
 
     msg_id = send_batch(payload)
