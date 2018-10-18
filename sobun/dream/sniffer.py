@@ -26,6 +26,7 @@ from bluepy.btle import Scanner, DefaultDelegate
 # sniffer.py pushes data into a queue that syncer.py pops
 # syncer runs the celery worker using the redis queue: https://celery.readthedocs.io/en/latest/getting-started/first-steps-with-celery.html#first-steps
 from dream.syncer import batch
+from dream.core import PacketBundler
 
 
 def extract_packet_from_bleAdvertisement(bleAdvertisement):
@@ -71,6 +72,7 @@ class PushDelegate(DefaultDelegate):
     def __init__(self, hci=0):
         DefaultDelegate.__init__(self)
         self.hci = hci
+        self.bundler = PacketBundler(batch, bundle_size=100, hci=hci)
 
     # When this script "discovers" a new BLE advertisement, do this:
     def handleDiscovery(self, bleAdvertisement, _unused_isNewTag_,
@@ -79,9 +81,8 @@ class PushDelegate(DefaultDelegate):
         packet = extract_packet_from_bleAdvertisement(bleAdvertisement)
         if packet:
             if is_fujitsu_tag(packet):
-                #push the packet into the redis broker queue for a celery worker to handle asynchronously
-                batch.delay(packet, self.hci)
-                print('push packet from HCI {hci} to the celery queue'.format(hci=self.hci))
+                self.bundler.append(packet)
+                print("bundle size: {}".format(len(self.bundler.bundle)))
 
 
 # scan continuously

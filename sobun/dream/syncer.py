@@ -28,19 +28,22 @@ def push(packet, hci=0):
 
 
 @app.task
-def batch(packet, hci=0):
+def batch(bundle, hci=0):
+    rows = []
+    for packet in bundle:
+        # Fujitsu's mfr_data value has measurements in the last 16 characters (8 bytes)
+        mfr_data = packet.pop('mfr_data')
+        measurements = mfr_data[-16:]
+        row = {
+            "timestamp": packet["timestamp"],
+            "tag_id": packet["tag_id"],
+            "measurements": measurements,
+            "hci": hci,
+            "rssi": packet["rssi"]
+        }
+        rows.append(row)
+
     dbconn = dbconnect()
-    # Fujitsu's mfr_data value has measurements in the last 16 characters (8 bytes)
-    mfr_data = packet.pop('mfr_data')
-    measurements = mfr_data[-16:]
-    row = {
-        "timestamp": packet["timestamp"],
-        "tag_id": packet["tag_id"],
-        "measurements": measurements,
-        "hci": hci,
-        "rssi": packet["rssi"]
-    }
-    insert(row, dbconn.cursor())
-    print('inserting: ', row)
+    insert(rows, dbconn.cursor(), many=True)
     dbconn.commit()
     dbconn.close()
