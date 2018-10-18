@@ -57,7 +57,7 @@ def insert(row_or_rows, cursor, many=False):
         cursor.execute(sql, row_or_rows)
 
 
-def create_unique_batch(dbconn, batch_size=200):
+def create_unique_batch(dbconn, batch_size=20000):
     cursor = dbconn.cursor()
     res = cursor.execute("SELECT count(*) FROM measurements WHERE batch_id = 0")
     count, = res.fetchone()
