@@ -32,14 +32,7 @@ def run(data, context):
 
     # data['data'] is somehow base64 encoded
     payloads = base64.b64decode(data['data']).decode('utf-8')
-    lines = payloads.split('\n')
-    rows = []
-    for line in lines:
-        row = line.split(',')
-        timestamp, tag_id, measurements, hci, rssi = row
-        bigquery_row = (tag_id, measurements, hub_id, int(timestamp), int(rssi), int(hci))
-        rows.append(bigquery_row)
-
+    rows = helpers.rows_from_payloads(payloads)
     # BigQuery has a limit of 10K insert at a time
     batches = helpers.batch(rows, 10000)
     for batch in batches:
