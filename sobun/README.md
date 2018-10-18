@@ -199,6 +199,11 @@ sudo sysctl -p /etc/sysctl.conf
 ```
 
 
+To keep the logging files to a mininal disk usage, we can set the `maxsize` to 1M.  Modify `/etc/logrotate.conf` by adding this line at the top:
+```
+maxsize 1M
+```
+
 
 Create the two directories for DREAM: 
 
