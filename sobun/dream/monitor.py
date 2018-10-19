@@ -3,8 +3,14 @@ import sys
 
 from google.cloud import bigquery
 
+# Note that in order for this to work, Rit created the empty file: drainer/__init__.py
+# without that file, this breaks. 
+# Note that the table_id and dataset_id variables below are dependent on config 
+# Make sure they agree with what's in the query too! 
 from dream.drainer import config
 
+
+# TODO the dataset and table are hardcoded 
 query = """
 SELECT
     hub_id,
