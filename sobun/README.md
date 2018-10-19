@@ -476,6 +476,10 @@ The source repo holds the code. To update the source repo manually, click `edit`
 Big Query holds our data. We created the `dream_assets_dataset` which contains the `dream_values_table`. When you create the table, under schema, choose "Edit as text" and insert the following for the schema:
 
 ```sql
+tag_id:STRING,measurements:STRING,hub_id:STRING,timestamp:INTEGER,rssi:INTEGER,hci:INTEGER
+```
+
+```sql
 hub_id:STRING,tag_id:STRING,temperature:FLOAT,x_accel:FLOAT,y_accel:FLOAT,z_accel:FLOAT,rssi:INTEGER,hci:INTEGER,timestamp:INTEGER
 ```
 
