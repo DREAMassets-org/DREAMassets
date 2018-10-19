@@ -6,6 +6,9 @@
 /home/pi/repo/dream.git/daemonize.sh
 /home/pi/repo/dream.git/peak-hour.sh
 
+# This shell script will create/recreate the db schema
+( cd sobun && ../setup-sqlite-db.sh )
+
 # Stop the sniffer and syncer processes
 sudo systemctl stop dream-syncer
 sudo systemctl stop dream-sniffer@{0..3}
@@ -13,8 +16,6 @@ sudo systemctl stop dream-sniffer@{0..3}
 # Flush all data from the redis queue and assicated list of results
 redis-cli flushall
 
-# This will create/recreate the db schema
-( cd sobun && ../setup-sqlite-db.sh )
 
 echo
 echo "To create a pristine sleep Hub, run this script and:" 

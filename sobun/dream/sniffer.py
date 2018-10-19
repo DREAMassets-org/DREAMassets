@@ -3,17 +3,24 @@
 # Data structure:
 #   Overall:   BLE ADVERTISEMENT -> PACKET -> PAYLOAD
 #
+# The naming convention is: 
+#   BUNDLING packets before inserting into the queue
+#   BATCHING payloads before publishing them to a topic in Google PubSub
+#
 #   sniffer.py BLE ADVERTISEMENT -> PACKET
-#              gathers a BLE advertisement
+#              discover a BLE advertisement
 #              extracts a packet from the BLE advertisement
-#              pushes the packet into the queue
+#              bundles 100 packets together (for speed)
+#              pushes the bundle of packets into the queue
 #
 #   syncer.py  PACKET -> PAYLOAD
-#              pops packet from the queue
-#              extracts a payload from the packet
-#              publishes payload to cloud
+#              pops a bundle of packets from the queue
+#              extracts payloads from the packets
+#              stores the payloads in an SQLite database 
+#              publishes batches of 20,000 payloads to cloud
 
-# get libraries for print, regular expression, file system, and interrupt signals
+
+
 from __future__ import print_function
 import re
 import sys
@@ -25,6 +32,7 @@ from bluepy.btle import Scanner, DefaultDelegate
 
 # sniffer.py pushes data into a queue that syncer.py pops
 # syncer runs the celery worker using the redis queue: https://celery.readthedocs.io/en/latest/getting-started/first-steps-with-celery.html#first-steps
+# core.py bundles the packets into bundles 
 from dream.syncer import batch
 from dream.core import PacketBundler
 
@@ -78,11 +86,11 @@ class PushDelegate(DefaultDelegate):
     def handleDiscovery(self, bleAdvertisement, _unused_isNewTag_,
                         _unused_isNewData_):
         # _unused_isNewTag_ and _unused_isNewData_ arent' relevant for DREAM
-        packet = extract_packet_from_bleAdvertisement(bleAdvertisement)
+        packet = extract_packet_from_bleAdvertisement(bleAdvertisement) 
         if packet:
             if is_fujitsu_tag(packet):
                 self.bundler.append(packet)
-                print("bundle size: {}".format(len(self.bundler.bundle)))
+                print("bundle size: {}".format(len(self.bundler.bundle))) 
 
 
 # scan continuously
@@ -120,8 +128,6 @@ Options:
 if __name__ == '__main__':
     from docopt import docopt
 
-    # get the argument for which BLE to use. hci0 is BLE built into RasPi. hci1 is BLE USB dongle.
-    # ??? can we add a default value 0?
     args = docopt(USAGE)
     hci = args['<hci>']
 

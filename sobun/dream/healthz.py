@@ -1,3 +1,9 @@
+# This script was for development purposes but is no longer useful
+#
+# During development, we streamed small amounts of data to BigQuery (~100 measurements every few seconds)
+# based on that expectation, this script showed which Hubs were offline / failing
+# DREAM now uploads 20k measurements every hour-ish, so this script is moot. 
+#
 # This file queries BigQuery to see updates to our table 
 # We use it to monitor the system status 
 

@@ -1,18 +1,28 @@
-# Create the db scheame
+# DREAM uses SQLite to pop payloads from the queue 
+# and batch the payloads in groups of 20k before 
+# publishing to Google PubSub
+#
+# Create the db schema
+
 
 import sqlite3
+# Note that SQLite allows many concurrent reads and but just 1 write at a time
+# DREAM has different processes that write to the database (syncer and batcher)
+# So we need to account for when the file is locked during a write. 
 
-
+# open to the database file 
 def dbconnect(name=None):
     if not name:
+        # the default name for the SQLite database
         name = 'measurements.db'
 
-    # Wait at most for 30 seconds for the lock to go away
+    # Wait at most for 30 seconds for the lock to go away (rather than default of 5 seconds)
     conn = sqlite3.connect(name, timeout=30000)
     conn.row_factory = sqlite3.Row
     return conn
 
 
+# Create a schema which defines a table called measurements
 def create_schema(dbconn):
     SCHEMA = """
     CREATE TABLE IF NOT EXISTS measurements(
@@ -56,7 +66,9 @@ def insert(row_or_rows, cursor, many=False):
     else:
         cursor.execute(sql, row_or_rows)
 
-
+# We put payloads in a batch to reduce bandwidth costs on the cellular network 
+# Mark which rows in the table are part of a batch with a batch_id
+# We need to mark batches to handle the case when PubSub fails and we need to retry sending the batch 
 def create_unique_batch(dbconn, batch_size=20000):
     cursor = dbconn.cursor()
     res = cursor.execute("SELECT count(*) FROM measurements WHERE batch_id = 0")
@@ -71,7 +83,7 @@ def create_unique_batch(dbconn, batch_size=20000):
         cursor.execute(sql, dict(batch_size=batch_size))
         print('batch created')
     else:
-        print('{} more payloads is needed before batching'.format(batch_size - count))
+        print('{} more payloads are needed before the batch is ready to publish'.format(batch_size - count))
 
 
 def publish_batch(dbconn, batch_id):
@@ -113,6 +125,7 @@ def publish_next_batch(dbconn):
     dbconn.commit()
 
     cursor = dbconn.cursor()
+    # store the result (res)
     res = cursor.execute("SELECT min(batch_id) FROM measurements WHERE batch_id > 0")
     batch_id, = res.fetchone()
     if batch_id:
@@ -157,6 +170,7 @@ Options:
     -h --help   Show this screen.
 """
 
+# pristine.sh launches setup-sqlite-db.sh which runs this script in reset mode to create the db schema 
 if __name__ == "__main__":
     from docopt import docopt
 
@@ -176,20 +190,6 @@ if __name__ == "__main__":
     elif args['--genpayloads']:
         for x in xrange(200):
             generate_sample_payloads(dbconn)
-    else:
-        row = {
-                "batch_id": 1,
-                "timestamp": 123,
-                "tag_id": "abc",
-                "measurements": 'abcdef',
-                "rssi": -54,
-                "hci": 0
-                }
-        # cursor = dbconn.cursor()
-        # insert(row, cursor=cursor)
-        # dbconn.commit()
 
-        # batch_id = 1
-        # publish_batch(dbconn, batch_id)
 
     dbconn.close()

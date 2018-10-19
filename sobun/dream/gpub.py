@@ -16,11 +16,13 @@ from google.cloud.pubsub import types
 HUB_ID = socket.gethostname()
 
 # The Hub publishes to this topic on PubSub 
+# Ensure that the google secrets JSON has permissions for this topic! 
 topic = "projects/dream-assets-project/topics/batched-payloads"
 
 # When the batch is created, it begins a countdown that publishes the batch
 # once sufficient time has elapsed (by default, this is 0.05 seconds).
 # We batch for 10 seconds worth of data coming out of the redis queue.
+# The queue has bundles of packets so it's really 50 messages x 100 packets/message.  
 publisher = pubsub.PublisherClient(
         # TODO when we tune the system, we'll want to adjust these values 
         batch_settings=types.BatchSettings(max_messages=50, max_latency=10), )
