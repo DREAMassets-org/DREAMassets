@@ -401,7 +401,31 @@ redis-cli flushall
 
 -----------------------------
 
+# SQLite
 
+Monitor from the Hub: 
+
+```
+sudo apt-get install sqlite3
+```
+
+```
+sqlite3 measurements.db < sql/count.sql
+```
+
+```
+sqlite3 measurements.db < sql/latest.sql
+```
+
+```
+```
+```
+```
+```
+```
+
+
+--------------------
 
 # Monitor system performance
 
@@ -439,7 +463,7 @@ Use the `watch` command to see the service send each packet:
 watch -n0.5 sudo systemctl status dream-syncer.service
 ```
 
-###Other notes
+### Other notes
 
 View the `.envrc` file that shows where to find credentials for Google Cloud:
 
