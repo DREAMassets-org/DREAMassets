@@ -13,13 +13,10 @@ import base64
 from google.cloud import bigquery
 
 import helpers
+import config
 
 client = bigquery.Client()
-
-# TODO put in config file too 
-dataset_id = 'dream_assets_dataset'
-table_id = 'dream_measurements_table'
-table_ref = client.dataset(dataset_id).table(table_id)
+table_ref = client.dataset(config.BIG_QUERY_DATASET_ID).table(config.BIG_QUERY_TABLE_ID)
 table = client.get_table(table_ref)
 
 

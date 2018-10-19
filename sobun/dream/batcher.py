@@ -2,6 +2,8 @@
 
 import sqlite3
 
+from dream import config
+
 
 def dbconnect(name=None):
     if not name:
@@ -57,7 +59,9 @@ def insert(row_or_rows, cursor, many=False):
         cursor.execute(sql, row_or_rows)
 
 
-def create_unique_batch(dbconn, batch_size=20000):
+def create_unique_batch(dbconn, batch_size=None):
+    if batch_size is None:
+        batch_size = int(config.BATCH_SIZE)
     cursor = dbconn.cursor()
     res = cursor.execute("SELECT count(*) FROM measurements WHERE batch_id = 0")
     count, = res.fetchone()
