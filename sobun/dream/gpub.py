@@ -12,11 +12,13 @@ import copy
 from google.cloud import pubsub
 from google.cloud.pubsub import types
 
+from dream import config
+
 # During setup, we set the RasPi's hostname to the Hub ID  
 HUB_ID = socket.gethostname()
 
 # The Hub publishes to this topic on PubSub 
-topic = "projects/dream-assets-project/topics/batched-payloads"
+TOPIC = "projects/{}/topics/{}".format(config.GOOGLE_PROJECT_ID, config.GOOGLE_PUBSUB_TOPIC)
 
 # When the batch is created, it begins a countdown that publishes the batch
 # once sufficient time has elapsed (by default, this is 0.05 seconds).
@@ -47,7 +49,7 @@ def send_data(packet, hci):
 
     # We reduce the packet to a payload, try to publish it and wait for the callback    
     payload = clean(packet)
-    future = publisher.publish(topic, payload)
+    future = publisher.publish(TOPIC, payload)
     future.add_done_callback(on_result)
     print("sending payload from HCI {hci}: {payload}".format(hci=hci, payload=payload))
 
@@ -72,7 +74,7 @@ def clean(packet):
 
 def send_batch(payload):
     publisher = pubsub.PublisherClient()
-    future = publisher.publish(topic, payload, hub_id=HUB_ID)
+    future = publisher.publish(TOPIC, payload, hub_id=HUB_ID)
     return future.result()
 
 
