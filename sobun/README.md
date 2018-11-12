@@ -1,13 +1,43 @@
 # README for the DREAM project
 #### _Sobun style :)_
 
-The DREAM project is an IoT system to gather environmental data from assets such as items in a warehouse. Physically, the project consists of (1) Tags with sensors that broadcast BLE advertisements containing measurements, (2) Hubs that route the data and (3) Cloud storage and analysis.  Hubs are Raspberry Pi machines with SORACOM cellular dongles.  Cloud is Google PubSub, Cloud Function, and BigQuery. 
+The DREAM project is an IoT system to gather environmental data from assets such as items in a warehouse. Physically, the project consists of (1) Tags with sensors that broadcast BLE advertisements containing measurements, (2) Hubs that route the data and (3) Cloud storage and analysis.  Hubs are Raspberry Pi machines with SORACOM cellular dongles.  Cloud is Google PubSub, Cloud Function, Source Repositories and BigQuery. 
 
 Both the Raspberry Pi and Google Cloud have:
 
 1. Provisioning
 2. Applications
 3. Deployment
+
+## Configuration variables
+Here are the variables to set as you customize your own DREAM project.
+
+### On the Hub
+
+* **Firmware version** On the Hub, pull ***Version 3.0 (BUILD THIS!! add link)*** of the Hub software from Github. 
+* **GCP PubSub key**. In the `~/secrets` folder, ensure that you have the JSON file `google-credentials.secret.json` with the Google Cloud Platform (GCP) key to publish to the PubSub topic for your DREAM project.
+* **PubSub topic**. In `~/repo/dream.git/sobun/dream` the file `gpub.py` publishes to the GCP PubSub topic as defined in **`config.py`**: 
+
+```
+GOOGLE_PROJECT_ID = os.environ.get("GOOGLE_PROJECT_ID", "dream-assets-project")
+GOOGLE_PUBSUB_TOPIC = os.environ.get("GOOGLE_PUBSUB_TOPIC ", "dream-pubsub-topic")
+BATCH_SIZE = os.environ.get("BATCH_SIZE", "20000")
+```
+***does gpub.py use config.batch_size?***
+
+* **Start time**. DREAM uses `systemd` to start scanning for BLE advertisements. In the `~/repo/dream.git/` folder the file `dream-sniffer-starter.timer` specifies the start time as `OnCalendar=Mon..Fri *-*-* 08:00:00`, meaning the Hub will automatically start scanning at 8am from Monday through Friday.  
+* **Stop time**. The file `dream-sniffer-stopper.timer` specifies the stop time as `OnCalendar=*-*-* 18:00:00` meaning the Hub will automatically stop scanning at 6pm every day.  
+
+### In the Cloud
+
+* **Cloudware version**. On your laptop, download ***Create LInk*** where the files in `~/repo/dream.git/sobun/dream/drainer`  
+* **Source Repo and Big Query**. Ensure that your code in the Source Repo points to the right values in BigQuery:  `dream_assets_dataset` and `dream_measurements_table`. 
+*  
+
+### On your laptop
+You'll use the command line for monitoring the status of the project. Download a Key (***with what credentials??***), name it `google-credentials.secret.json` and put it in the `/sobun/` folder.
+
+***this failed on Mike's laptop for cambtober. let's fix it.***
 
 ## Data structure
 ### `bleAdvertisement` -> `packet` -> `payload`
@@ -16,12 +46,12 @@ We're using [bluepy](https://ianharvey.github.io/bluepy-doc/index.html) to inter
 
 Here's the relevant data in the `bleAdvertisement`: 
 
-* `addr` is a 6-byte (12-character) MAC **address** of the BLE device, which is the `tag_ID` in DREAM. 
+* `addr` is a 6-byte (12-character) **MAC address** of the BLE device, which is the `tag_ID` in DREAM. 
 * `rssi` is the 1-byte (2-character) Received Signal Strength Indicator, a relative metric.
 * `mfr_data` is 16-byte (32-character) blob of hex data defined by the manufacturer. For Tags in DREAM, `mfr_data` looks like `5900 010003000300 1d04 5900 0a00 4608` where:
   * `5900` is junk 
-  * `010003000300` is the unique identifier for the Tags
-  * `1d04 5900 0a00 4608` are sensor **`measurements`** for temp, x-, y-, and z-acceleration.
+  * `010003000300` is the manufacturer's unique identifier  
+  * `1d04 5900 0a00 4608` are sensor **`measurements`** in hexadecimal for temperature, x-, y-, and z-acceleration.
 
 Here's the data when `sniffer.py` creates a **packet**: 
 
@@ -43,7 +73,7 @@ Here's the data when `syncer.py`creates a **payload**:
 ## Latest architecture
 We're using a queue to decouple sniffing BLE from publishing to the cloud.  
 
-* `sniffer.py` pushes packets into the queue  
+* `sniffer.py` pushes packets into the queue in groups of 100 packets.  
 * **Redis** holds the queue   
 * In `syncer.py`, **Celery "workers"** pop packets from the queue, reduce the packets to payloads and send payloads to the cloud. 
 
@@ -101,7 +131,7 @@ value: 750042040180607c6456361fd97e6456361fd801000000000000
 
 # Build a Hub from Scratch
 
-The easiest way to interface with the RasPi by physically attaching an ethernet cable between the RasPi and your MacBook. On your MacBook enable `Internet Sharing` per [this tutorial](https://medium.com/@tzhenghao/how-to-ssh-into-your-raspberry-pi-with-a-mac-and-ethernet-cable-636a197d055). The tutorial goes into detail on using `nmap` to find your RasPi, but it's easiest to just SSH in:
+The easiest way to interface with the RasPi by **physically attaching an ethernet cable** between the RasPi and your MacBook. On your MacBook enable `Internet Sharing` per [this tutorial](https://medium.com/@tzhenghao/how-to-ssh-into-your-raspberry-pi-with-a-mac-and-ethernet-cable-636a197d055). The tutorial goes into detail on using `nmap` to find your RasPi, but it's easiest to just SSH in:
 
 ```
 ssh pi@raspberrypi.local
@@ -398,6 +428,12 @@ redis-cli llen celery
 redis-cli flushall
 ```
 
+### Raspberry Pi Tools
+
+Once you have a functioning RasPi Hub, it's useful to clone the SD Card on your laptop. Here are tools we've found useful:
+
+* [SD Clone](https://twocanoes.com/products/mac/sd-clone/) enables you to save a version of your SD Card and copy it to another SD Card. Heads up that these copies can take up to 30minutes, but it's much easier than starting from scratch.
+* [SD Card Formatter](https://www.sdcard.org/downloads/formatter_4/) for when you need to clean an SD Card and start again. Typically, you can use SD Clone directly, but if it fails on debug tip is to format the SD Card. 
 
 -----------------------------
 
