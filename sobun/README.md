@@ -30,9 +30,20 @@ BATCH_SIZE = os.environ.get("BATCH_SIZE", "20000")
 
 ### In the Cloud
 
-* **Cloudware version**. On your laptop, download ***Create LInk*** where the files in `~/repo/dream.git/sobun/dream/drainer`  
-* **Source Repo and Big Query**. Ensure that your code in the Source Repo points to the right values in BigQuery:  `dream_assets_dataset` and `dream_measurements_table`. 
-*  
+* **Cloudware version**. On your laptop, download ***Create LInk*** where the files in `~/repo/dream.git/sobun/dream/drainer`. Create a new branch that you'll push to GCP: 
+
+```
+git checkout customized-branch-in-gcp
+```
+  
+* **Source Repo and Big Query**. Change your code so that `drainer/config.py` in Source Repo points to the right values in BigQuery:  `dream_assets_dataset` and `dream_measurements_table`. 
+*  Upload your code:
+
+```
+git push --all google
+```
+
+
 
 ### On your laptop
 You'll use the command line for monitoring the status of the project. Download a Key (***with what credentials??***), name it `google-credentials.secret.json` and put it in the `/sobun/` folder.
