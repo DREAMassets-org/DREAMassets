@@ -216,8 +216,11 @@ sudo apt-get install network-manager -y
 
 _Debug:_ Note that this script restarts the network service, so it might hang and kick you off the network. Don't worry about it -- just close the Terminal window and log back in to the RasPi.  
 
+Install SQLite for debugging purposes:
 
-
+```
+sudo apt-get install sqlite -y
+```
 
 ## Provisioning RasPi: Get the files and folders
 
