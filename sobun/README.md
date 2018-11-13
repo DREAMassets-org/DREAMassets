@@ -27,6 +27,11 @@ BATCH_SIZE = os.environ.get("BATCH_SIZE", "20000")
 
 * **Start time**. DREAM uses `systemd` to start scanning for BLE advertisements. In the `~/repo/dream.git/` folder the file `dream-sniffer-starter.timer` specifies the start time as `OnCalendar=Mon..Fri *-*-* 08:00:00`, meaning the Hub will automatically start scanning at 8am from Monday through Friday.  
 * **Stop time**. The file `dream-sniffer-stopper.timer` specifies the stop time as `OnCalendar=*-*-* 18:00:00` meaning the Hub will automatically stop scanning at 6pm every day.  
+* **Wifi networks**. Edit and set the wifi networks for the project:
+
+```
+sudo pico /etc/wpa_supplicant/wpa_supplicant.conf
+```
 
 ### In the Cloud
 
@@ -226,7 +231,7 @@ sudo apt-get install network-manager -y
 
 _Debug:_ Note that this script restarts the network service, so it might hang and kick you off the network. Don't worry about it -- just close the Terminal window and log back in to the RasPi.  
 
-### Tools for debugging
+### Tools for debugging from the `sobun` folder
 
 Install SQLite to query the `measurements.db` database directly:
 
@@ -234,7 +239,15 @@ Install SQLite to query the `measurements.db` database directly:
 sudo apt-get install sqlite -y
 ```
 
-#### Relevant commands from the `sobun` folder:
+To use SQLite from the command line, note that the python scripts expect the Google Pubsub credentials to be in the `sobun/` folder, so be sure to copy the credentials and then source them:
+
+```
+cd
+cp secrets/google-credentials.secret.json repo/dream.git/sobun/
+cd repo/dream.git/sobun/
+source .envrc
+```
+
 
 Get a count of rows in the database
 
@@ -333,7 +346,17 @@ For instance, to measure the duration of the `date` command, run:
 time date
 ```
 
+Install `speedtest`:
 
+```
+sudo pip install speedtest-cli
+```
+
+Measure the network upload and download speed:
+
+```
+speedtest-cli
+```
 
 Install [WonderShaper](https://www.hecticgeek.com/2012/02/simple-traffic-shaping-ubuntu-linux/) to mimic the network throttling from the cellular connection
 
