@@ -14,46 +14,49 @@ Here are the variables to set as you customize your own DREAM project.
 
 ### On the Hub
 
-* **Firmware version** On the Hub, pull ***Version 3.0 (BUILD THIS!! add link)*** of the Hub software from Github. 
+* **Firmware version** On the Hub, pull ***[Version 3.0 (BUILD THIS!! add link)]*** of the Hub software from Github. 
+* The relevant files for the Hub are in the `~/secrets` folder and the `~/repo/dream.git/sobun/dream/` folder (TODO: rename `dream/` to `hub/`)
 * **GCP PubSub key**. In the `~/secrets` folder, ensure that you have the JSON file `google-credentials.secret.json` with the Google Cloud Platform (GCP) key to publish to the PubSub topic for your DREAM project.
-* **PubSub topic**. In `~/repo/dream.git/sobun/dream` the file `gpub.py` publishes to the GCP PubSub topic as defined in **`config.py`**: 
+* **PubSub topic**. In `~/repo/dream.git/sobun/dream` the file `batcher.py` publishes to the GCP PubSub topic as defined in **`config.py`**: 
 
 ```
 GOOGLE_PROJECT_ID = os.environ.get("GOOGLE_PROJECT_ID", "dream-assets-project")
 GOOGLE_PUBSUB_TOPIC = os.environ.get("GOOGLE_PUBSUB_TOPIC ", "dream-pubsub-topic")
 BATCH_SIZE = os.environ.get("BATCH_SIZE", "20000")
 ```
-***does gpub.py use config.batch_size?***
 
 * **Start time**. DREAM uses `systemd` to start scanning for BLE advertisements. In the `~/repo/dream.git/` folder the file `dream-sniffer-starter.timer` specifies the start time as `OnCalendar=Mon..Fri *-*-* 08:00:00`, meaning the Hub will automatically start scanning at 8am from Monday through Friday.  
 * **Stop time**. The file `dream-sniffer-stopper.timer` specifies the stop time as `OnCalendar=*-*-* 18:00:00` meaning the Hub will automatically stop scanning at 6pm every day.  
 
 ### In the Cloud
 
-* **Cloudware version**. On your laptop, download ***Create LInk*** where the files in `~/repo/dream.git/sobun/dream/drainer`. Create a new branch that you'll push to GCP: 
+* **Cloudware version**. On your laptop, download ***[Create LInk]*** where the files in `~/repo/dream.git/sobun/dream/drainer`. 
+* The relevant files for the GCP Cloud Function are in the `~/repo/dream.git/sobun/dream/drainer` folder (TODO: move and rename `dream/drainer/` to `cloud/`)
+* Create a new branch that you'll push to GCP: 
 
 ```
 git checkout customized-branch-in-gcp
 ```
   
-* **Source Repo and Big Query**. Change your code so that `drainer/config.py` in Source Repo points to the right values in BigQuery:  `dream_assets_dataset` and `dream_measurements_table`. 
-*  Upload your code:
+* **Source Repo and Big Query**. Change your Cloud Function code so that `drainer/main.py` points to the right values in BigQuery:  `dream_assets_dataset` and `dream_measurements_table`. 
+*  Upload your code to the Source Repo:
 
 ```
 git push --all google
 ```
 
+* Create the Cloud Function using the code in the Source Repo under your `customized-branch-in-gcp`. 
 
 
 ### On your laptop
-You'll use the command line for monitoring the status of the project. Download a Key (***with what credentials??***), name it `google-credentials.secret.json` and put it in the `/sobun/` folder.
+You'll use the command line for monitoring the status of the project. Download a Key (***[with what credentials??]***), name it `google-credentials.secret.json` and put it in the `/sobun/` folder.
 
-***this failed on Mike's laptop for cambtober. let's fix it.***
+***[this failed on Mike's laptop for cambtober. let's fix it.]***
 
 ## Data structure
-### `bleAdvertisement` -> `packet` -> `payload`
+### `bleAdvertisement` -> `packet` -> `payload` -> `batch`
 
-We're using [bluepy](https://ianharvey.github.io/bluepy-doc/index.html) to interface with Bluetooth in advertising mode. All BLE devices emit a **`BLE advertisent`** with lots of data, including the environmental measurements pertinent to DREAM as well as less important details, such as `adtype`. On the Hub, `sniffer.py` puts a **`packet`** of the data DREAM needs in a queue. Then `syncer.py` reduces the packet to a **`payload`** and publishes the payloads to the cloud. 
+We're using [bluepy](https://ianharvey.github.io/bluepy-doc/index.html) to interface with Bluetooth in advertising mode. All BLE devices emit a **`BLE advertisent`** with lots of data, including the environmental measurements pertinent to DREAM as well as less important details, such as `adtype`. On the Hub, `sniffer.py` puts a **`packet`** of the data DREAM needs in a queue. Then `syncer.py` reduces the packet to a **`payload`** and inserts it as a row in an SQLite database on the Hub. Finally, `batcher.py` publishes the batches to the cloud. 
 
 Here's the relevant data in the `bleAdvertisement`: 
 
@@ -81,12 +84,19 @@ Here's the data when `syncer.py`creates a **payload**:
 * `hci` is the host-control interface number of the BLE chip
 * `measurements` in hex which are just 16 characters (8 bytes) of temperature and acceleration data.
 
+When `batcher.py` publishes to the PubSub topic, there are a few tradeoffs and considerations: 
+
+* The batch is ~20k rows so that we don't waste cellular bandwidth on all of the metadata associated with the upload.
+* The batch can't exceed 10MB since that's the maximum message size that GCP PubSub accepts.
+* In the GCP Cloud Fuction, we break apart the batch since GCP BigQuery only allows a maximum  insertion size of 10k rows. 
+
 ## Latest architecture
-We're using a queue to decouple sniffing BLE from publishing to the cloud.  
+We're using a queue to decouple sniffing BLE from processing data. We're using an SQLite databse to decouple batching and publishing to the cloud.  
 
 * `sniffer.py` pushes packets into the queue in groups of 100 packets.  
 * **Redis** holds the queue   
-* In `syncer.py`, **Celery "workers"** pop packets from the queue, reduce the packets to payloads and send payloads to the cloud. 
+* In `syncer.py`, **Celery "workers"** pop packets from the queue, reduce the packets to payloads and insert them as rows in the SQLite database. 
+* `batcher.py` marks rows in the SQLite database as part of a batch, tries to publish the rows as a message in a PubSub topic, and then deletes the marked rows if the message was published successfully.
 
 
 ## Here's how `bluepy` works in the DREAM project:  
@@ -216,11 +226,131 @@ sudo apt-get install network-manager -y
 
 _Debug:_ Note that this script restarts the network service, so it might hang and kick you off the network. Don't worry about it -- just close the Terminal window and log back in to the RasPi.  
 
-Install SQLite for debugging purposes:
+### Tools for debugging
+
+Install SQLite to query the `measurements.db` database directly:
 
 ```
 sudo apt-get install sqlite -y
 ```
+
+#### Relevant commands from the `sobun` folder:
+
+Get a count of rows in the database
+
+```
+sqlite3 measurements.db < sql/count.sql
+```
+
+The `syncer.py` pops packets from the queue and inserts payloads into the SQLite database, so stop the syncer service to better debug the SQLite database:
+
+```
+sudo systemctl stop dream-syncer
+```
+
+Check which systemd timers are running:
+
+```
+sudo systemctl list-timers
+```
+
+Try publishing a batch:
+
+```
+python -m dream.batcher --next-batch
+```
+
+Publish a batch where you set batch size to 1,000 rows:
+
+```
+BATCH_SIZE=2000 python -m dream.batcher --next-batch
+```
+
+Reset the SQLite database (per `setup-sqlite-db.sh`):
+
+```
+cd sobun
+rm measurements.db
+touch measurements.db
+source venv/bin/activate
+pip install -r requirements.txt
+python -m dream.batcher --reset
+sqlite3 measurements.db < sql/count.sql
+```
+
+Use the command line to query the SQLite database directly:
+
+```
+sqlite3 measurements.db
+```
+
+This opens a terminal into the database. Turn `on` headers so the results are easier to understand:
+
+
+```
+.headers on
+```
+
+Looks at a data sample:
+
+```
+select * from measurements limit 1;
+```
+
+Get a list of all of the unique distinct batches that are flagged in the database. By default, all rows have `batch_id=0`.
+
+```
+select distinct (batch_id) from measurements;
+```
+
+Get a count of the rows for batch number 12:
+
+```
+select count (*) from measurements where batch_id = 12;
+```
+
+Set `batch_id=0` for all rows to remove the flagged batches:
+
+```
+update measurements set batch_id = 0;
+```
+
+Quit or exit using
+
+```
+ctrl-d
+```
+
+To measure the duraction of a process, use `time`:
+
+```
+sudo apt-get install time
+```
+
+For instance, to measure the duration of the `date` command, run:
+
+```
+time date
+```
+
+
+
+Install [WonderShaper](https://www.hecticgeek.com/2012/02/simple-traffic-shaping-ubuntu-linux/) to mimic the network throttling from the cellular connection
+
+```
+sudo apt-get install wondershaper
+```
+
+_Debug Note_: In November we found an issue. Originally the batcher servcie (as configured in `dream/config.py` and `batcher-timer`) in systemd worked together to publish 20k rows every 5 minutes. If the Hub added data faster than 20k rows/ 5 mins, then the `measurements.db` backed up. Moreover, if the [cellular network was flaky](https://github.com/googleapis/google-cloud-python/issues/4019) and publishing to PubSub failed then it hung up the Hub and caused a failure. 
+
+One debug idea we considered was to adjust systemd by changing `5` to `1` in `dream-batcher.timer` so that it would run every 1 minute instead of every 5 minutes. Ultimately, we decided a better strategy was to upload batches based on the size of the SQLite database instead during a fixed time interval:
+
+```
+[Timer]
+OnCalendar=*:0/5
+```
+
+
 
 ## Provisioning RasPi: Get the files and folders
 
