@@ -1,7 +1,10 @@
 # Create the db scheame
 
+import signal
 import sqlite3
+import sys
 import threading
+import time
 
 from dream import config
 
@@ -172,6 +175,22 @@ Options:
     -h --help   Show this screen.
 """
 
+
+def main(dbconn):
+
+    def stop(signum, frame):
+        dbconn.close()
+        sys.exit()
+
+    signal.signal(signal.SIGHUP, stop)
+    signal.signal(signal.SIGINT, stop)
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGTSTP, stop)
+
+    while True:
+        publish_next_batch(dbconn)
+        time.sleep(1)
+
 if __name__ == "__main__":
     from docopt import docopt
 
@@ -192,19 +211,6 @@ if __name__ == "__main__":
         for x in xrange(200):
             generate_sample_payloads(dbconn)
     else:
-        row = {
-                "batch_id": 1,
-                "timestamp": 123,
-                "tag_id": "abc",
-                "measurements": 'abcdef',
-                "rssi": -54,
-                "hci": 0
-                }
-        # cursor = dbconn.cursor()
-        # insert(row, cursor=cursor)
-        # dbconn.commit()
-
-        # batch_id = 1
-        # publish_batch(dbconn, batch_id)
+        main(dbconn)
 
     dbconn.close()
