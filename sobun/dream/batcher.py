@@ -76,7 +76,7 @@ def create_unique_batch(dbconn, batch_size=None):
         cursor.execute(sql, dict(batch_size=batch_size))
         res = cursor.execute("select max(batch_id) from measurements")
         max_batch_id, = res.fetchone()
-        print('batch {} was created and will be publish next'.format(max_batch_id))
+        print('batch {} was created and will be published soon'.format(max_batch_id))
     else:
         print('{} more payloads is needed to create another batch'.format(batch_size - count))
 
