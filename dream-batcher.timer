@@ -1,8 +1,0 @@
-[Unit]
-Description=Run dream.batcher --next-batch by regular interval
-
-[Timer]
-OnCalendar=*:0/5
-
-[Install]
-WantedBy=multi-user.target
