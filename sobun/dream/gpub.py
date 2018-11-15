@@ -75,7 +75,10 @@ def clean(packet):
 def send_batch(payload):
     publisher = pubsub.PublisherClient()
     future = publisher.publish(TOPIC, payload, hub_id=HUB_ID)
-    return future.result()
+    # If result is not returned within the timeout duration, it will raise
+    # `exceptions.TimeoutError`
+    timeout = float(config.DREAM_PUBSUB_TIMEOUT)
+    return future.result(timeout)
 
 
 # for development purposes: 

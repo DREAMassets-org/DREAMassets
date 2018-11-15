@@ -1,6 +1,7 @@
 # Create the db scheame
 
 import sqlite3
+import threading
 
 from dream import config
 
@@ -73,9 +74,11 @@ def create_unique_batch(dbconn, batch_size=None):
             LIMIT :batch_size
         """
         cursor.execute(sql, dict(batch_size=batch_size))
-        print('batch created')
+        res = cursor.execute("select max(batch_id) from measurements")
+        max_batch_id, = res.fetchone()
+        print('batch {} was created and will be publish next'.format(max_batch_id))
     else:
-        print('{} more payloads is needed before batching'.format(batch_size - count))
+        print('{} more payloads is needed to create another batch'.format(batch_size - count))
 
 
 def publish_batch(dbconn, batch_id):
@@ -106,10 +109,19 @@ def publish_batch(dbconn, batch_id):
         lines.append(",".join(map(str, compacted_row)))
     payload = "\n".join(lines)
 
-    msg_id = send_batch(payload)
-    if msg_id:
+    def batching():
+        msg_id = send_batch(payload)
+        print("Pub/Sub msg_id was created: {}".format(msg_id))
+    batching_thread = threading.Thread(target=batching)
+    batching_thread.daemon = True
+    batching_thread.start()
+    batching_thread.join(float(config.DREAM_PUBSUB_TIMEOUT))
+    if batching_thread.is_alive():
+        print('Error: Publishing data to the Cloud took too long')
+    else:
         dbconn.execute("DELETE FROM measurements WHERE batch_id = :batch_id", dict(batch_id=batch_id))
         dbconn.commit()
+        print('Successfully published batch {} data to the Cloud'.format(batch_id))
 
 
 def publish_next_batch(dbconn):
@@ -121,9 +133,8 @@ def publish_next_batch(dbconn):
     batch_id, = res.fetchone()
     if batch_id:
         publish_batch(dbconn, batch_id)
-        print("Published {}".format(batch_id))
     else:
-        print("Nothing to batch yet")
+        print("Not enough payloads to create a batch")
 
 
 def generate_sample_payloads(dbconn):
