@@ -9,14 +9,16 @@ https://cloud.google.com/functions/docs/writing/background#functions_background_
 """
 
 import base64
-
 from google.cloud import bigquery
-
 import helpers
-import config
 
 client = bigquery.Client()
-table_ref = client.dataset(config.BIG_QUERY_DATASET_ID).table(config.BIG_QUERY_TABLE_ID)
+
+# Configure the GCP Cloud Function here by inserting the BigQuery dataset and table IDs 
+dataset_id = 'dream_assets_dataset'
+table_id = 'dream_measurements_table'
+table_ref = client.dataset(dataset_id).table(table_id)
+
 table = client.get_table(table_ref)
 
 
