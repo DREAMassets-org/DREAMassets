@@ -14,7 +14,7 @@ Here are the variables to set as you customize your own DREAM project.
 
 ### On the Hub
 
-* **Firmware version** On the Hub, pull ***[Version 3.0 (BUILD THIS!! add link)]*** of the Hub software from Github. 
+* **Firmware version** On the Hub, pull [Version 3.0](https://github.com/DREAMassets-org/DREAMassets/commit/3733f3342bcd265cb1af3f9dd331a822e0b4a10e) of the Hub software from Github. 
 * The relevant files for the Hub are in the `~/secrets` folder and the `~/repo/dream.git/sobun/dream/` folder (TODO: rename `dream/` to `hub/`)
 * **GCP PubSub key**. In the `~/secrets` folder, ensure that you have the JSON file `google-credentials.secret.json` with the Google Cloud Platform (GCP) key to publish to the PubSub topic for your DREAM project.
 * **PubSub topic**. In `~/repo/dream.git/sobun/dream` the file `batcher.py` publishes to the GCP PubSub topic as defined in **`config.py`**: 
@@ -200,6 +200,14 @@ sudo apt-mark hold wolfram-engine
 sudo apt-get upgrade -y
 ```
 
+The RasPi comes with many pre-installed folders. Remove all of them (except Desktop) to clean up the home directory.
+
+```
+rm -rf Music
+```
+
+Add the two folders for the DREAM project and a placeholder for the Google 
+
 
 Get glib2.0, Google Cloud PubSub, BLE, python daemon, redis and virtualenv: 
 ```
@@ -349,7 +357,7 @@ time date
 Install `speedtest`:
 
 ```
-sudo pip install speedtest-cli
+sudo apt-get install speedtest-cli
 ```
 
 Measure the network upload and download speed:
@@ -374,14 +382,6 @@ OnCalendar=*:0/5
 ```
 
 
-
-## Provisioning RasPi: Get the files and folders
-
-The RasPi comes with many pre-installed folders. Remove all of them (except Desktop) to clean up the home directory.
-
-```
-rm -rf Music
-```
 
 
 Modify the `/etc/sysctl.conf` by adding a line with `vm.overcommit_memory=1`:
