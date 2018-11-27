@@ -3,7 +3,6 @@
 import signal
 import sqlite3
 import sys
-import threading
 import time
 
 from dream import config
@@ -112,17 +111,11 @@ def publish_batch(dbconn, batch_id):
         lines.append(",".join(map(str, compacted_row)))
     payload = "\n".join(lines)
 
-    def batching():
-        msg_id = send_batch(payload)
+    msg_id = send_batch(payload)
+    if msg_id:
         print("Pub/Sub msg_id was created: {}".format(msg_id))
-    batching_thread = threading.Thread(target=batching)
-    batching_thread.daemon = True
-    batching_thread.start()
-    batching_thread.join(float(config.DREAM_PUBSUB_TIMEOUT))
-    if batching_thread.is_alive():
-        print('Error: Publishing data to the Cloud took too long')
-    else:
         dbconn.execute("DELETE FROM measurements WHERE batch_id = :batch_id", dict(batch_id=batch_id))
+        dbconn.execute("VACUUM")
         dbconn.commit()
         print('Successfully published batch {} data to the Cloud'.format(batch_id))
 
