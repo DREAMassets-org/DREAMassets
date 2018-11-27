@@ -115,6 +115,7 @@ def publish_batch(dbconn, batch_id):
     if msg_id:
         print("Pub/Sub msg_id was created: {}".format(msg_id))
         dbconn.execute("DELETE FROM measurements WHERE batch_id = :batch_id", dict(batch_id=batch_id))
+        dbconn.execute("VACUUM")
         dbconn.commit()
         print('Successfully published batch {} data to the Cloud'.format(batch_id))
 
