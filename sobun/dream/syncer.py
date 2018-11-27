@@ -12,21 +12,6 @@ app = Celery()
 app.config_from_object('celeryconfig')  
 
 
-
-@app.task
-def push(packet, hci=0):
-    # Publish packet data to Google's PubSub
-
-    # Lazy import send_data so only the Celery workers need Google Authz
-    # Without this in push, then the sniffer.py file would also need Google Authz 
-    from dream.gpub import send_data
-
-    # We pass packets to send_data, 
-    # which cleans the packet to create a payload
-    # and then publishes the payload to PubSub 
-    send_data(packet, hci)
-
-
 @app.task
 def batch(bundle, hci=0):
     rows = []
