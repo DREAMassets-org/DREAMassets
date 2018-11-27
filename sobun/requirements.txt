@@ -6,6 +6,7 @@ bluepy==1.2.0; sys_platform=="linux2"
 celery==4.2.1
 docopt==0.6.2
 google-api-python-client==1.7.4
+google-cloud-bigquery==1.6.0
 kombu==4.2.1
 pytz==2018.5
 redis==2.10.6
