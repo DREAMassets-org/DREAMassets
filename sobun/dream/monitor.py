@@ -3,12 +3,6 @@ import sys
 
 from google.cloud import bigquery
 
-# Note that in order for this to work, Rit created the empty file: drainer/__init__.py
-# without that file, this breaks. 
-# Note that the table_id and dataset_id variables below are dependent on config 
-# Make sure they agree with what's in the query too! 
-from dream.drainer import config
-
 
 # TODO the dataset and table are hardcoded 
 query = """
@@ -25,8 +19,8 @@ ORDER BY hub_id
 
 if __name__ == "__main__":
     client = bigquery.Client()
-    dataset_id = config.BIG_QUERY_DATASET_ID
-    table_id = config.BIG_QUERY_TABLE_ID
+    dataset_id = 'dream_assets_dataset'
+    table_id = 'dream_measurements_table'
     table_ref = client.dataset(dataset_id).table(table_id)
     table = client.get_table(table_ref)
 
