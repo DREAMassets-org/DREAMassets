@@ -190,7 +190,7 @@ pico config.py
 GOOGLE_PROJECT_ID = os.environ.get("GOOGLE_PROJECT_ID", "your-gcp-project")
 GOOGLE_PUBSUB_TOPIC = os.environ.get("GOOGLE_PUBSUB_TOPIC ", "project_hex_measurements_topic")
 ```
-
+_Pro tip:_ You can speed up the time to publish to PubSub by reducing the `BATCH_SIZE` from 20,000 rows of data to something smaller like 2,000.
 
 *  On your laptop, copy the GCP PubSub JSON key you created previously to the `secrets` folder on your `woke` Hub:
 
@@ -246,4 +246,7 @@ cd ~/repo/dream.git/
 ./pristine.sh
 ```
 
-Reboot your Pi and 
+Reboot your Pi to start the DREAM :)  
+
+On start, the Hub will automatically gather BLE advertisements from the Tags. Once it hits the BATCH_SIZE of data, it will publish to PubSub and you'll be able to see the data in BigQuery. 
+
