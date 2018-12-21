@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+# This script automatically executes when the cell network connects
+# Felix from Soracom provided this script -- Mike commented it out
+#datetime=`date "+%Y-%m-%d %H:%M:%S"`
+# echo "[$datetime] Disconnected" >> /home/pi/soracom.log
+
+# Mike modified Felix's script for the DREAM project
+logger "The cell connection was broken"
+
+
