@@ -1,0 +1,19 @@
+[Unit]
+Description=dream-sniffer
+After=bluetooth.service
+
+[Service]
+User=root
+Type=simple
+WorkingDirectory=/home/pi/repo/dream.git/sobun
+ExecStart=/bin/bash -c 'exec ./venv/bin/python -m dream.sniffer %I'
+Restart=always
+StandardInput=null
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=%n
+KillMode=mixed
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+[Unit]
+Description=dream-batcher
+After=network-online.target
+Requires=network-online.target
+
+
+[Service]
+User=pi
+Type=simple
+WorkingDirectory=/home/pi/repo/dream.git/sobun
+Environment=GOOGLE_APPLICATION_CREDENTIALS=/home/pi/secrets/google-credentials.secret.json
+ExecStart=/bin/bash -c 'exec ./venv/bin/python -m dream.batcher'
+Restart=always
+StandardInput=null
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=%n
+KillMode=mixed
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

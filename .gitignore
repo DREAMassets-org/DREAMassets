@@ -1,5 +1,6 @@
 # general stuff
 logs/*
+.DS_Store
 
 # secrets
 env.sh
@@ -12,3 +13,5 @@ secrets/credentials.json
 # vi/emacs temp files
 \#*
 \*~
+venv
+**/*.pid

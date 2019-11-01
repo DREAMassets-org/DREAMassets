@@ -1,4 +1,4 @@
-# D.R.E.A.M.
+# D.R.E.A.M. 
 
 ## Raspberry Pi Setup
 
@@ -24,7 +24,7 @@ Make sure you are on the **same wireless network** as it will only be availble w
 *if this doesn't work, verify that both your laptop and RPi are on the same network.*
 1. Disconnect your RPi from the monitor, keyboard and mouse and put it in whatever location is most convenient for you.
 
-## Get the RPi ready for Bluetooth Low Energy (BLE)
+## Get the RPi ready for Bluetooth Low Energy (BLE) 
 We need a few extra packages for the Pi to be a BLE scanner.
 
 ```bash
